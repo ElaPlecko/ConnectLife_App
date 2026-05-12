@@ -7,6 +7,7 @@ Cilj projekta je vzpostaviti lahek, a robusten sistem, ki ekipi omogoča hitro p
 **OPIS PROBLEMA**
 
 ConnectLife aplikacija deluje na več trgih (državah/segmentih) z različnimi poslovnimi pravili, podprtimi funkcijami in vsebinami. Trenutna situacija zahteva novo izdajo aplikacije vsakič, ko želi ekipa spremeniti:
+
 •	katere funkcije so aktivne za določen trg (npr. voice control, self-diagnostics, shopping list, WashDry sync)
 
 •	vsebino FAQ, "Suggestions & ideas", receptov, člankov in nasvetov po trgu
@@ -36,9 +37,13 @@ To povzroča zamude, operativne stroške in tveganje neskladij med tem, kar apli
 **ARHITEKTURA**
 
 Rešitev temelji na lahki tri-nivojski arhitekturi (3-tier), prilagojeni za POC obseg.
+
 Layer 1 — Admin Portal (Frontend): React SPA, dostopen internemu osebju
+
 Layer 2 — Backend API (Node.js / Python FastAPI): REST API za CRUD operacije in config generiranje
+
 Layer 3 — Data Store: PostgreSQL za konfiguracije + optional S3/blob storage za JSON config file serving
+
 Config Delivery: JSON config endpoint, ki ga ConnectLife app pobere ob zagonu (ali periodično)
 
 **DEPLOYMENT IN INFRASTRUKTURA**
