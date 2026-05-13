@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import { auth } from "./firebase";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
 
 function App() {
-  console.log(auth);
-
   return (
-    <div>
-      <h1>ConnectLife Admin Portal</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
