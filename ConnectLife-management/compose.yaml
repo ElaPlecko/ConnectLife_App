@@ -1,0 +1,9 @@
+services:
+  connectlife-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: connectlife-management
+    ports:
+      - "8080:80"
+    restart: unless-stopped
