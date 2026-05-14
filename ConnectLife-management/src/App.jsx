@@ -37,7 +37,7 @@ function Portal() {
   };
 
   return (
-    <div style={{ display: "flex" }}>
+    <div>
       <Sidebar currentView={currentView} onNavigate={handleNavigate} />
       <main className="app-shell">
         <Topbar onNavigate={handleNavigate} />
