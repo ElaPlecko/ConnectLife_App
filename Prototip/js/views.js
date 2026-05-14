@@ -4,8 +4,8 @@ import {
   contentTypes,
   HISENSE,
   markets,
-} from "./data.js";
-import { flagIcon, iconSvg, optionLabel, table } from "./helpers.js";
+} from "../../ConnectLife-management/src/data/data.js";
+import { flagIcon, iconSvg, optionLabel, table } from "../../ConnectLife-management/src/utils/helpers.js";
 
 function marketRows(limit) {
   return markets

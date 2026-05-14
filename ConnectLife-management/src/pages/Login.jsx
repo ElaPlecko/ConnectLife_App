@@ -16,10 +16,10 @@ export default function Login() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-const email = result.user.email;
-console.log("Email ki se je prijavil:", email);
-console.log("Seznam adminov:", ADMIN_EMAILS);
-if (ADMIN_EMAILS.includes(email)) {
+      const email = result.user.email;
+      console.log("Email ki se je prijavil:", email);
+      console.log("Seznam adminov:", ADMIN_EMAILS);
+      if (ADMIN_EMAILS.includes(email)) {
         navigate("/dashboard");
       } else {
         await auth.signOut();
@@ -355,12 +355,7 @@ if (ADMIN_EMAILS.includes(email)) {
         <div className="left-panel">
           <div className="grid-overlay" />
           <div className="brand">
-            <div className="brand-icon">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-            <span className="brand-name">ConnectLife</span>
+            <img src="/connectlife_logo.png" alt="ConnectLife" style={{height: "3rem"}} />
           </div>
 
           <div className="left-content">

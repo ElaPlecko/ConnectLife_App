@@ -1,5 +1,5 @@
-import { activities, appliances, HISENSE, segments, users } from "./data.js";
-import { table } from "./helpers.js";
+import { activities, appliances, HISENSE, segments, users } from "../../ConnectLife-management/src/data/data.js";
+import { table } from "../../ConnectLife-management/src/utils/helpers.js";
 import {
   apiView,
   comparisonView,
