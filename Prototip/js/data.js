@@ -1,4 +1,4 @@
-export const HISENSE = "#009A9D";
+export const HISENSE = "#00AAA6";
 
 export const markets = [
   {

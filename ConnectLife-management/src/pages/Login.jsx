@@ -3,10 +3,7 @@ import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-const ADMIN_EMAILS = [
-  
-  // dodaj prave admin emaile
-];
+const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -19,8 +16,10 @@ export default function Login() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const email = result.user.email;
-      if (ADMIN_EMAILS.includes(email)) {
+const email = result.user.email;
+console.log("Email ki se je prijavil:", email);
+console.log("Seznam adminov:", ADMIN_EMAILS);
+if (ADMIN_EMAILS.includes(email)) {
         navigate("/dashboard");
       } else {
         await auth.signOut();
