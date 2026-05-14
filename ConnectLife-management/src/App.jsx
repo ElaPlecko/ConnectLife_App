@@ -10,6 +10,7 @@ import ApiExplorer from "./components/views/ApiExplorer";
 import { Markets, Segments, Content, Links, Users, AuditLog, Settings } from "./components/views/SimpleViews";
 
 function Portal() {
+  const [brandColor, setBrandColor] = useState("#009A9D");
   const [currentView, setCurrentView] = useState("dashboard");
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ function Portal() {
     api: <ApiExplorer />,
     users: <Users />,
     audit: <AuditLog />,
-    settings: <Settings />,
+    settings: <Settings brandColor={brandColor} setBrandColor={setBrandColor} />,
   };
 
   return (

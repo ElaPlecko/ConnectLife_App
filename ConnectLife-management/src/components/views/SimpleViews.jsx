@@ -1,5 +1,6 @@
 import { markets, segments, contentTypes, users, activities } from "../../data/data.js";
 import { flagIcon, Table } from "../../utils/helpers.jsx";
+import { useState } from "react";
 
 function SimplePanel({ title, action, children }) {
   return (
@@ -112,14 +113,28 @@ export function AuditLog() {
   );
 }
 
-export function Settings() {
+export function Settings({ brandColor, setBrandColor }) {
+  const handleSave = () => {
+    document.documentElement.style.setProperty("--hisense", brandColor);
+    document.documentElement.style.setProperty("--hisense-dark", brandColor);
+  };
+
   return (
-    <SimplePanel title="Settings" action="Save Settings">
+    <section className="panel page-panel">
+      <div className="panel-header">
+        <h2>Settings</h2>
+        <button className="primary-button" type="button" onClick={handleSave}>
+          Save Settings
+        </button>
+      </div>
       <div className="settings-grid">
         <label><span>Portal name</span><input defaultValue="ConnectLife App Management Portal" /></label>
-        <label><span>Brand color</span><input defaultValue="#00AAA6" /></label>
+        <label>
+          <span>Brand color</span>
+          <input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} />
+        </label>
         <label><span>Environment</span><input defaultValue="POC" /></label>
       </div>
-    </SimplePanel>
+    </section>
   );
 }
