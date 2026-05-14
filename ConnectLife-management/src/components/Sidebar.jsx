@@ -13,11 +13,11 @@ export default function Sidebar({ currentView, onNavigate }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark"><span /><span /></div>
-        <div>
-          <strong>ConnectLife</strong>
-          <small>Manager</small>
-        </div>
+        <img src="/connectlife_logo.png" alt="ConnectLife" style={{ height: "3rem" }} />
+          <div>
+            <strong>ConnectLife</strong>
+            <small>Manager</small>
+          </div>
       </div>
 
       <nav className="nav" aria-label="Main navigation">
