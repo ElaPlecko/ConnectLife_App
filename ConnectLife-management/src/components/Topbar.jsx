@@ -5,7 +5,7 @@ export default function Topbar({ onNavigate }) {
       <div className="user-tools">
         <button className="icon-button" type="button" aria-label="Help">?</button>
         <button className="login-button" type="button" onClick={() => onNavigate("login")}>
-          Odjava
+          Logout
         </button>
       </div>
     </header>

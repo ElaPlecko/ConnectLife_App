@@ -17,16 +17,14 @@ export default function Login() {
     try {
       const result = await signInWithPopup(auth, provider);
       const email = result.user.email;
-      console.log("Email ki se je prijavil:", email);
-      console.log("Seznam adminov:", ADMIN_EMAILS);
       if (ADMIN_EMAILS.includes(email)) {
         navigate("/dashboard");
       } else {
         await auth.signOut();
-        setError("Dostop zavrnjen. Tvoj račun ni na seznamu adminov.");
+        setError("Access denied. Your account is not on the admin list.");
       }
     } catch (err) {
-      setError("Napaka pri prijavi. Poskusi znova.");
+      setError("Sign in failed. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -48,7 +46,6 @@ export default function Login() {
           background: #0a0a0a;
         }
 
-        /* LEFT PANEL */
         .left-panel {
           position: relative;
           background: #0d1117;
@@ -85,32 +82,6 @@ export default function Login() {
           display: flex;
           align-items: center;
           gap: 12px;
-        }
-
-        .brand-icon {
-          width: 36px;
-          height: 36px;
-          background: linear-gradient(135deg, #00b48c, #0088c8);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .brand-icon svg {
-          width: 20px;
-          height: 20px;
-          fill: none;
-          stroke: white;
-          stroke-width: 2;
-          stroke-linecap: round;
-        }
-
-        .brand-name {
-          font-size: 15px;
-          font-weight: 500;
-          color: rgba(255,255,255,0.9);
-          letter-spacing: -0.01em;
         }
 
         .left-content {
@@ -167,7 +138,6 @@ export default function Login() {
           flex-shrink: 0;
         }
 
-        /* RIGHT PANEL */
         .right-panel {
           background: #f8f7f4;
           display: flex;
@@ -217,25 +187,6 @@ export default function Login() {
           color: #888;
           font-weight: 300;
           line-height: 1.6;
-        }
-
-        .divider {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin: 28px 0;
-        }
-
-        .divider-line {
-          flex: 1;
-          height: 1px;
-          background: #e5e3de;
-        }
-
-        .divider-text {
-          font-size: 12px;
-          color: #bbb;
-          font-weight: 300;
         }
 
         .google-btn {
@@ -351,48 +302,42 @@ export default function Login() {
       `}</style>
 
       <div className="login-root">
-        {/* LEFT */}
         <div className="left-panel">
           <div className="grid-overlay" />
           <div className="brand">
-            <img src="/connectlife_logo.png" alt="ConnectLife" style={{height: "3rem"}} />
+            <img src="/connectlife_logo.png" alt="ConnectLife" style={{ height: "3rem" }} />
           </div>
 
           <div className="left-content">
             <h1>Market config<br />made <span>simple.</span></h1>
-            <p>Upravljaj feature flags, vsebine in zunanje povezave za vsak trg — brez nove izdaje aplikacije.</p>
+            <p>Manage feature flags, content and external links per market — without a new app release.</p>
           </div>
 
           <div className="feature-list">
             <div className="feature-item">
               <div className="feature-dot" />
-              Centralno upravljanje feature gatinga po trgih
+              Centralised feature gating per market
             </div>
             <div className="feature-item">
               <div className="feature-dot" />
-              FAQ, articles in webshop linki per market
+              FAQ, articles and webshop links per market
             </div>
             <div className="feature-item">
               <div className="feature-dot" />
-              JSON config API za mobilno aplikacijo
+              JSON config API for the mobile app
             </div>
           </div>
         </div>
 
-        {/* RIGHT */}
         <div className="right-panel">
           <div className="login-card">
             <div className="login-card-header">
-              <div className="eyebrow">Admin dostop</div>
-              <h2>Dobrodošla nazaj</h2>
-              <p>Prijavi se s svojim Hisense Google računom za dostop do portala.</p>
+              <div className="eyebrow">Admin access</div>
+              <h2>Welcome back</h2>
+              <p>Sign in with your Hisense Google account to access the portal.</p>
             </div>
 
-            <button
-              className="google-btn"
-              onClick={handleLogin}
-              disabled={loading}
-            >
+            <button className="google-btn" onClick={handleLogin} disabled={loading}>
               {loading ? (
                 <div className="loading-spinner" />
               ) : (
@@ -404,7 +349,7 @@ export default function Login() {
                 </svg>
               )}
               <span className="btn-text">
-                {loading ? "Prijavljanje..." : "Nadaljuj z Gmailom"}
+                {loading ? "Signing in..." : "Continue with Google"}
               </span>
             </button>
 
@@ -416,7 +361,7 @@ export default function Login() {
             )}
 
             <div className="notice">
-              <strong>Samo za interno ekipo.</strong> Dostop je omejen na pooblaščene ConnectLife admin račune. Če nimaš dostopa, se obrni na projektno vodjo.
+              <strong>Internal use only.</strong> Access is restricted to authorised ConnectLife admin accounts. Contact your project lead if you need access.
             </div>
 
             <p className="footer-note">ConnectLife Admin Portal · Hisense · 2026</p>
