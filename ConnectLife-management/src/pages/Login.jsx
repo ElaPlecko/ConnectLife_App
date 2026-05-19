@@ -35,6 +35,13 @@ export default function Login() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
 
+      alert(`
+User: ${result.user.email}
+
+Admins:
+${JSON.stringify(ADMIN_EMAILS)}
+`);
+
       await checkAdminAccess(result.user.email);
     } catch (err) {
       console.error(err);
