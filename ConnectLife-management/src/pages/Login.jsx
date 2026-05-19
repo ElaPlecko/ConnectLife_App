@@ -34,33 +34,26 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
 
-      console.log("RAW EMAIL:", result.user.email);
-console.log("EMAIL JSON:", JSON.stringify(result.user.email));
-console.log("ADMIN LIST:", ADMIN_EMAILS);
+    console.log("LOGIN SUCCESS:", result.user.email);
 
+    await checkAdminAccess(result.user.email);
+  } catch (err) {
+    console.error("🔥 GOOGLE LOGIN ERROR FULL:", err);
+    console.error("CODE:", err.code);
+    console.error("MESSAGE:", err.message);
 
-      alert(`
-User: ${result.user.email}
-
-Admins:
-${JSON.stringify(ADMIN_EMAILS)}
-`);
-
-      await checkAdminAccess(result.user.email);
-    } catch (err) {
-      console.error(err);
-      setError("Google sign in failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleEmailLogin = async (e) => {
   e.preventDefault();
