@@ -7,13 +7,8 @@ import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-//const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
 const ADMIN_EMAILS =
-  (import.meta.env.VITE_ADMIN_EMAILS || "")
-    .split(",")
-    .map(e => e.trim().toLowerCase());
-
-const email = userEmail.trim().toLowerCase();
+  import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -34,64 +29,62 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-  setLoading(true);
-  setError("");
+    setLoading(true);
+    setError("");
 
-  try {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
 
-    console.log("LOGIN SUCCESS:", result.user.email);
+      console.log("LOGIN SUCCESS:", result.user.email);
+      console.log("ADMIN_EMAILS:", ADMIN_EMAILS);
 
-    await checkAdminAccess(result.user.email);
-  } catch (err) {
-    console.error("🔥 GOOGLE LOGIN ERROR FULL:", err);
-    console.error("CODE:", err.code);
-    console.error("MESSAGE:", err.message);
-
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+      await checkAdminAccess(result.user.email);
+    } catch (err) {
+      console.error("GOOGLE LOGIN ERROR:", err);
+      setError("Google sign in failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  setLoading(true);
-  setError("");
+    setLoading(true);
+    setError("");
 
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    navigate("/dashboard");
-  } catch (err) {
-    console.error(err);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
 
-    switch (err.code) {
-      case "auth/user-not-found":
-        setError("User does not exist.");
-        break;
+      switch (err.code) {
+        case "auth/user-not-found":
+          setError("User does not exist.");
+          break;
 
-      case "auth/wrong-password":
-        setError("Wrong password.");
-        break;
+        case "auth/wrong-password":
+          setError("Wrong password.");
+          break;
 
-      case "auth/invalid-credential":
-        setError("Invalid email or password.");
-        break;
+        case "auth/invalid-credential":
+          setError("Invalid email or password.");
+          break;
 
-      default:
-        setError("Login failed. Please try again.");
+        default:
+          setError("Login failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <>
@@ -362,12 +355,13 @@ export default function Login() {
             <div className="divider">or</div>
 
             <button
-              className="google-btn"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-            >
-              Continue with Google
-            </button>
+            type="button"
+            className="google-btn"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          >
+            Continue with Google
+          </button>
 
             {error && (
               <div className="error-box">
