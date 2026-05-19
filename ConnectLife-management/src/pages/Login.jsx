@@ -7,7 +7,13 @@ import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
+//const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
+const ADMIN_EMAILS =
+  (import.meta.env.VITE_ADMIN_EMAILS || "")
+    .split(",")
+    .map(e => e.trim().toLowerCase());
+
+const email = userEmail.trim().toLowerCase();
 
 export default function Login() {
   const navigate = useNavigate();
@@ -34,6 +40,11 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+
+      console.log("RAW EMAIL:", result.user.email);
+console.log("EMAIL JSON:", JSON.stringify(result.user.email));
+console.log("ADMIN LIST:", ADMIN_EMAILS);
+
 
       alert(`
 User: ${result.user.email}
