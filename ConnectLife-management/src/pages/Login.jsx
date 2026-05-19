@@ -45,39 +45,42 @@ export default function Login() {
   };
 
   const handleEmailLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const result = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-      await checkAdminAccess(result.user.email);
-    } catch (err) {
-      console.error(err);
+    navigate("/dashboard");
+  } catch (err) {
+    console.error(err);
 
-      switch (err.code) {
-        case "auth/user-not-found":
-          setError("User does not exist.");
-          break;
-        case "auth/wrong-password":
-          setError("Wrong password.");
-          break;
-        case "auth/invalid-credential":
-          setError("Invalid email or password.");
-          break;
-        default:
-          setError("Login failed. Please try again.");
-      }
-    } finally {
-      setLoading(false);
+    switch (err.code) {
+      case "auth/user-not-found":
+        setError("User does not exist.");
+        break;
+
+      case "auth/wrong-password":
+        setError("Wrong password.");
+        break;
+
+      case "auth/invalid-credential":
+        setError("Invalid email or password.");
+        break;
+
+      default:
+        setError("Login failed. Please try again.");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>
