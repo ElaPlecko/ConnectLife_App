@@ -1,0 +1,41 @@
+.api-actions {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+}
+
+.api-actions label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.api-actions select {
+  width: min(430px, 38vw);
+}
+
+pre {
+  min-height: 440px;
+  overflow: auto;
+  margin: 0;
+  padding: 22px 24px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top right, rgba(0, 154, 157, 0.26), transparent 30%),
+    #061a32;
+  color: #a7efef;
+  font: 13px/1.6 "Cascadia Code", Consolas, monospace;
+}
+
+@media (max-width: 720px) {
+  .api-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .api-actions select {
+    width: 100%;
+  }
+}

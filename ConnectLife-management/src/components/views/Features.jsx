@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchAndActivate, getValue } from "firebase/remote-config";
 
 import { remoteConfig } from "../../firebase";
-import { Table } from "../../utils/helpers.jsx";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 
 function formatFeatureName(key) {
@@ -36,45 +35,171 @@ function buildConfigData(parsedConfig, configKey) {
       values,
     }));
 
-  return { features, restrictions };
+  const reservedKeys = new Set(["defaultConfiguration", configKey]);
+
+  const modelOverrides = Object.entries(parsedConfig)
+    .filter(([key, value]) => {
+      return (
+        !reservedKeys.has(key) &&
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      );
+    })
+    .map(([model, overrides]) => ({
+      model,
+      overrides: Object.entries(overrides)
+        .filter(([, value]) => typeof value === "boolean")
+        .map(([featureKey, enabled]) => ({
+          key: featureKey,
+          name: formatFeatureName(featureKey),
+          enabled: Boolean(enabled),
+        })),
+    }));
+
+  return {
+    features,
+    restrictions,
+    modelOverrides,
+  };
 }
 
-function ConfigBlock({ config }) {
-  const headers = ["Feature", "Enabled"];
+function ToggleButton({ enabled }) {
+  return (
+    <button
+      className={`switch-button${enabled ? " on" : ""}`}
+      type="button"
+      aria-pressed={enabled}
+    >
+      <span />
+      <em>{enabled ? "ON" : "OFF"}</em>
+    </button>
+  );
+}
 
-  const rows = config.features.map((feature) => (
-    <tr key={feature.key}>
-      <td>
-        <strong>{feature.name}</strong>
-      </td>
-
-      <td>
-        <button
-          className={`switch-button${feature.enabled ? " on" : ""}`}
-          type="button"
-          aria-pressed={feature.enabled}
-        >
-          <span />
-          <em>{feature.enabled ? "ON" : "OFF"}</em>
-        </button>
-      </td>
-    </tr>
-  ));
+function FeatureRow({ feature, overrides, expanded, onToggle }) {
+  const hasOverrides = overrides.length > 0;
 
   return (
-    <div style={{ marginTop: "1rem" }}>
-      <h4>{config.label}</h4>
-      <Table headers={headers} rows={rows} minWidth={720} />
+    <>
+      <div className="feature-row">
+        <button
+          className="feature-row-main"
+          type="button"
+          onClick={hasOverrides ? onToggle : undefined}
+          disabled={!hasOverrides}
+        >
+          <strong className="feature-row-title">{feature.name}</strong>
+        </button>
 
-      {config.restrictions.length > 0 && (
-        <div className="restriction-box" style={{ marginTop: "1rem" }}>
+        <div className="feature-row-toggle">
+          <ToggleButton enabled={feature.enabled} />
+        </div>
+
+        <button
+          className={`chevron-button feature-row-chevron${
+            hasOverrides ? "" : " is-hidden"
+          }${expanded ? " is-open" : ""}`}
+          type="button"
+          onClick={onToggle}
+          aria-label={expanded ? "Collapse model overrides" : "Expand model overrides"}
+        >
+          <span aria-hidden="true" />
+        </button>
+      </div>
+
+      {hasOverrides && expanded && (
+        <div className="model-panel">
+          <strong className="model-panel-title">Model overrides</strong>
+
+          <div className="model-list">
+            {overrides.map((item) => (
+              <div className="model-override" key={`${item.model}-${feature.key}`}>
+                <span className="model-name">{item.model}</span>
+                <ToggleButton enabled={item.enabled} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ConfigBlock({ config, primary = false }) {
+  const showFeatureList = !(
+    !primary &&
+    config.features.length === 1 &&
+    config.features[0].key === config.key
+  );
+
+  const featureOverrideMap = config.features.reduce((map, feature) => {
+    map[feature.key] = config.modelOverrides
+      ?.map((item) => {
+        const override = item.overrides.find(
+          (candidate) => candidate.key === feature.key
+        );
+
+        return override
+          ? {
+              model: item.model,
+              enabled: override.enabled,
+            }
+          : null;
+      })
+      .filter(Boolean);
+
+    return map;
+  }, {});
+
+  const firstFeatureWithOverrides =
+    config.features.find((feature) => featureOverrideMap[feature.key]?.length > 0)
+      ?.key ?? "";
+
+  const [expandedFeature, setExpandedFeature] = useState(firstFeatureWithOverrides);
+
+  return (
+    <div className={`config-block${primary ? " is-primary" : ""}`}>
+      <div className={`config-heading${showFeatureList ? "" : " is-standalone"}`}>
+        <div>
+          <h4>{config.label}</h4>
+        </div>
+
+        <ToggleButton enabled={config.features.some((feature) => feature.enabled)} />
+      </div>
+
+      {showFeatureList && (
+        <div className="feature-list">
+          {config.features.map((feature) => {
+            const overrides = featureOverrideMap[feature.key] ?? [];
+            const expanded = expandedFeature === feature.key;
+
+            return (
+              <FeatureRow
+                key={feature.key}
+                feature={feature}
+                overrides={overrides}
+                expanded={expanded}
+                onToggle={() =>
+                  setExpandedFeature((current) =>
+                    current === feature.key ? "" : feature.key
+                  )
+                }
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {config.restrictions?.length > 0 && (
+        <div className="restriction-box">
           <strong>Restrictions</strong>
 
           {config.restrictions.map((restriction) => (
-            <div key={restriction.key} style={{ marginTop: "0.75rem" }}>
+            <div className="restriction-group" key={restriction.key}>
               <span className="hint">{restriction.name}</span>
 
-              <div className="chip-list" style={{ marginTop: "0.5rem" }}>
+              <div className="chip-list">
                 {restriction.values.map((value) => (
                   <span className="market-chip" key={value}>
                     {value}
@@ -90,7 +215,7 @@ function ConfigBlock({ config }) {
 }
 
 function ApplianceSection({ appliance }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(appliance.id === "dishwasher");
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -106,18 +231,38 @@ function ApplianceSection({ appliance }) {
         const loadedConfigs = [];
 
         for (const remoteConfigItem of appliance.remoteKeys) {
-          const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
+          if (remoteConfigItem.type === "boolean") {
+            loadedConfigs.push({
+              key: remoteConfigItem.key,
+              label: `${remoteConfigItem.label} (Feature)`,
+              features: [
+                {
+                  key: remoteConfigItem.key,
+                  name: remoteConfigItem.label,
+                  enabled: getValue(remoteConfig, remoteConfigItem.key).asBoolean(),
+                },
+              ],
+              restrictions: [],
+              modelOverrides: [],
+            });
 
-          if (!rawValue) continue;
+            continue;
+          }
 
-          const parsedConfig = JSON.parse(rawValue);
-          const data = buildConfigData(parsedConfig, remoteConfigItem.configKey);
+          if (remoteConfigItem.type === "json") {
+            const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
 
-          loadedConfigs.push({
-            key: remoteConfigItem.key,
-            label: remoteConfigItem.label,
-            ...data,
-          });
+            if (!rawValue) continue;
+
+            const parsedConfig = JSON.parse(rawValue);
+            const data = buildConfigData(parsedConfig, remoteConfigItem.configKey);
+
+            loadedConfigs.push({
+              key: remoteConfigItem.key,
+              label: remoteConfigItem.label,
+              ...data,
+            });
+          }
         }
 
         setConfigs(loadedConfigs);
@@ -136,6 +281,7 @@ function ApplianceSection({ appliance }) {
     (sum, config) => sum + config.features.length,
     0
   );
+  const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
 
   return (
     <section className="appliance-section">
@@ -144,31 +290,32 @@ function ApplianceSection({ appliance }) {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="mini-icon appliance-icon" />
-
         <div>
           <h3>{appliance.name}</h3>
           <p>{appliance.category}</p>
         </div>
 
-        <span className="market-chip">
+        <span className="market-chip appliance-status">
           {loading ? "Loading..." : `${totalFeatures} features`}
         </span>
 
-        <strong style={{ marginLeft: "auto" }}>{open ? "▲" : "▼"}</strong>
+        <span
+          className={`chevron-button${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        />
       </button>
 
       {open && (
-        <div style={{ marginTop: "1rem" }}>
-          {error && (
-            <div className="hint" style={{ color: "#ff7676" }}>
-              {error}
-            </div>
-          )}
+        <div className="appliance-body">
+          {error && <div className="feature-error">{error}</div>}
 
           {!error &&
-            configs.map((config) => (
-              <ConfigBlock key={config.key} config={config} />
+            configs.map((config, index) => (
+              <ConfigBlock
+                key={config.key}
+                config={config}
+                primary={index === 0 && config.key === primaryKey}
+              />
             ))}
         </div>
       )}
@@ -178,29 +325,13 @@ function ApplianceSection({ appliance }) {
 
 export default function Features() {
   return (
-    <section className="panel page-panel">
-      <div className="panel-header">
-        <h2>Features</h2>
-        <span className="hint">
-          Feature availability from Firebase Remote Config.
-        </span>
-      </div>
-
-      <div className="feature-toolbar">
-        <div>
-          <strong>Appliance feature control</strong>
-          <span>Click an appliance to view available features.</span>
+    <section className="panel page-panel feature-page">
+      <div className="feature-shell">
+        <div className="appliance-stack">
+          {REMOTE_CONFIG_DEVICES.map((appliance) => (
+            <ApplianceSection key={appliance.id} appliance={appliance} />
+          ))}
         </div>
-
-        <span className="market-chip">
-          {REMOTE_CONFIG_DEVICES.length} appliances
-        </span>
-      </div>
-
-      <div className="appliance-stack">
-        {REMOTE_CONFIG_DEVICES.map((appliance) => (
-          <ApplianceSection key={appliance.id} appliance={appliance} />
-        ))}
       </div>
     </section>
   );
