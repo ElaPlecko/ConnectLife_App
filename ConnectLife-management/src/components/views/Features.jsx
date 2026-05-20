@@ -11,25 +11,87 @@ function formatFeatureName(key) {
     .replace(/^./, (char) => char.toUpperCase());
 }
 
-function buildFeatures(config, configKey) {
-  const defaultConfig = config.defaultConfiguration ?? {};
-  const deviceConfig = config[configKey] ?? {};
+function buildConfigData(parsedConfig, configKey) {
+  const defaultConfig = parsedConfig.defaultConfiguration ?? {};
+  const deviceConfig = parsedConfig[configKey] ?? {};
 
-  const merged = {
+  const mergedConfig = {
     ...defaultConfig,
     ...deviceConfig,
   };
 
-  return Object.entries(merged).map(([key, enabled]) => ({
-    key,
-    name: formatFeatureName(key),
-    enabled: Boolean(enabled),
-  }));
+  const features = Object.entries(mergedConfig)
+    .filter(([, value]) => typeof value === "boolean")
+    .map(([key, enabled]) => ({
+      key,
+      name: formatFeatureName(key),
+      enabled,
+    }));
+
+  const restrictions = Object.entries(mergedConfig)
+    .filter(([, value]) => Array.isArray(value))
+    .map(([key, values]) => ({
+      key,
+      name: formatFeatureName(key),
+      values,
+    }));
+
+  return { features, restrictions };
+}
+
+function ConfigBlock({ config }) {
+  const headers = ["Feature", "Enabled"];
+
+  const rows = config.features.map((feature) => (
+    <tr key={feature.key}>
+      <td>
+        <strong>{feature.name}</strong>
+      </td>
+
+      <td>
+        <button
+          className={`switch-button${feature.enabled ? " on" : ""}`}
+          type="button"
+          aria-pressed={feature.enabled}
+        >
+          <span />
+          <em>{feature.enabled ? "ON" : "OFF"}</em>
+        </button>
+      </td>
+    </tr>
+  ));
+
+  return (
+    <div style={{ marginTop: "1rem" }}>
+      <h4>{config.label}</h4>
+      <Table headers={headers} rows={rows} minWidth={720} />
+
+      {config.restrictions.length > 0 && (
+        <div className="restriction-box" style={{ marginTop: "1rem" }}>
+          <strong>Restrictions</strong>
+
+          {config.restrictions.map((restriction) => (
+            <div key={restriction.key} style={{ marginTop: "0.75rem" }}>
+              <span className="hint">{restriction.name}</span>
+
+              <div className="chip-list" style={{ marginTop: "0.5rem" }}>
+                {restriction.values.map((value) => (
+                  <span className="market-chip" key={value}>
+                    {value}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ApplianceSection({ appliance }) {
   const [open, setOpen] = useState(false);
-  const [features, setFeatures] = useState([]);
+  const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -41,15 +103,24 @@ function ApplianceSection({ appliance }) {
 
         await fetchAndActivate(remoteConfig);
 
-        const rawValue = getValue(remoteConfig, appliance.remoteKeys[0]).asString();
+        const loadedConfigs = [];
 
-        if (!rawValue) {
-          setError(`Remote Config parameter "${appliance.remoteKeys[0]}" is empty.`);
-          return;
+        for (const remoteConfigItem of appliance.remoteKeys) {
+          const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
+
+          if (!rawValue) continue;
+
+          const parsedConfig = JSON.parse(rawValue);
+          const data = buildConfigData(parsedConfig, remoteConfigItem.configKey);
+
+          loadedConfigs.push({
+            key: remoteConfigItem.key,
+            label: remoteConfigItem.label,
+            ...data,
+          });
         }
 
-        const parsed = JSON.parse(rawValue);
-        setFeatures(buildFeatures(parsed, appliance.configKey));
+        setConfigs(loadedConfigs);
       } catch (err) {
         console.error(err);
         setError("Could not load Remote Config.");
@@ -59,37 +130,12 @@ function ApplianceSection({ appliance }) {
     }
 
     loadRemoteConfig();
-  }, [appliance.remoteKey, appliance.configKey]);
+  }, [appliance]);
 
-  const toggle = (featureKey) => {
-    setFeatures((prev) =>
-      prev.map((feature) =>
-        feature.key === featureKey
-          ? { ...feature, enabled: !feature.enabled }
-          : feature
-      )
-    );
-  };
-
-  const rows = features.map((feature) => (
-    <tr key={feature.key}>
-      <td>
-        <strong>{feature.name}</strong>
-      </td>
-
-      <td>
-        <button
-          className={`switch-button${feature.enabled ? " on" : ""}`}
-          type="button"
-          aria-pressed={feature.enabled}
-          onClick={() => toggle(feature.key)}
-        >
-          <span />
-          <em>{feature.enabled ? "ON" : "OFF"}</em>
-        </button>
-      </td>
-    </tr>
-  ));
+  const totalFeatures = configs.reduce(
+    (sum, config) => sum + config.features.length,
+    0
+  );
 
   return (
     <section className="appliance-section">
@@ -106,7 +152,7 @@ function ApplianceSection({ appliance }) {
         </div>
 
         <span className="market-chip">
-          {loading ? "Loading..." : `${features.length} features`}
+          {loading ? "Loading..." : `${totalFeatures} features`}
         </span>
 
         <strong style={{ marginLeft: "auto" }}>{open ? "▲" : "▼"}</strong>
@@ -115,14 +161,15 @@ function ApplianceSection({ appliance }) {
       {open && (
         <div style={{ marginTop: "1rem" }}>
           {error && (
-            <div className="hint" style={{ color: "#ff7676", marginBottom: "1rem" }}>
+            <div className="hint" style={{ color: "#ff7676" }}>
               {error}
             </div>
           )}
 
-          {!error && (
-            <Table headers={["Feature", "Enabled"]} rows={rows} minWidth={720} />
-          )}
+          {!error &&
+            configs.map((config) => (
+              <ConfigBlock key={config.key} config={config} />
+            ))}
         </div>
       )}
     </section>
@@ -134,7 +181,9 @@ export default function Features() {
     <section className="panel page-panel">
       <div className="panel-header">
         <h2>Features</h2>
-        <span className="hint">Feature availability from Firebase Remote Config.</span>
+        <span className="hint">
+          Feature availability from Firebase Remote Config.
+        </span>
       </div>
 
       <div className="feature-toolbar">
