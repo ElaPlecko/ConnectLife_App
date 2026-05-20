@@ -84,9 +84,22 @@ export const REMOTE_CONFIG_DEVICES = [
     ],
     },
     {
-        id: "washerDryer",
-        name: "Washer-Dryer",
-        category: " Washing and Drying",
-        remoteKeys: []
-    }
+  id: "washerDryer",
+  name: "Washer-Dryer",
+  category: "Washing and Drying",
+  remoteKeys: [
+    {
+      key: "CL_VS_Device_WashingMachine",
+      label: "Washing Machine",
+      type: "json",
+      configKey: "deviceWashingMachine",
+    },
+    {
+      key: "CL_VS_Device_TumbleDryer",
+      label: "Tumble Dryer",
+      type: "json",
+      configKey: "deviceTumbleDryer",
+    },
+  ],
+}
 ];
