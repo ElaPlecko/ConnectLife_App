@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getRemoteConfig, fetchAndActivate} from "firebase/remote-config";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,3 +16,11 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const remoteConfig = getRemoteConfig(app);
+
+remoteConfig.settings.minimumFetchIntervalMillis = 0;
+
+remoteConfig.defaultConfig = {
+  welcome_message: "Default message",
+  feature_chat_enabled: false,
+};
