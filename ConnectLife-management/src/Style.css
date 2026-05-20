@@ -605,6 +605,7 @@ tr:last-child td {
   margin-top: 3px;
   color: var(--muted);
   font-size: 13px;
+  text-align: left;
 }
 
 .mini-icon {

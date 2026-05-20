@@ -75,9 +75,6 @@ function ApplianceSection({ appliance }) {
     <tr key={feature.key}>
       <td>
         <strong>{feature.name}</strong>
-        <span className="hint" style={{ display: "block" }}>
-          {feature.key}
-        </span>
       </td>
 
       <td>
