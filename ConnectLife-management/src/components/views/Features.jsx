@@ -3,6 +3,7 @@ import { fetchAndActivate, getValue } from "firebase/remote-config";
 
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
+import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
 
 function formatFeatureName(key) {
   return key
@@ -230,7 +231,15 @@ function ApplianceSection({ appliance }) {
 
         const loadedConfigs = [];
 
-        for (const remoteConfigItem of appliance.remoteKeys) {
+        const filteredRemoteKeys =
+          appliance.specialParser === "washerDryer"
+            ? appliance.remoteKeys.filter(
+                (remoteConfigItem) =>
+                  !duplicatedBooleanFeatures.includes(remoteConfigItem.key)
+              )
+            : appliance.remoteKeys;
+
+        for (const remoteConfigItem of filteredRemoteKeys) {
           if (remoteConfigItem.type === "boolean") {
             loadedConfigs.push({
               key: remoteConfigItem.key,

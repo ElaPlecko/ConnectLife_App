@@ -122,6 +122,7 @@ export const REMOTE_CONFIG_DEVICES = [
   id: "washerDryer",
   name: "Washer-Dryer",
   category: "Washing and Drying",
+  specialParser: "washerDryer",
   remoteKeys: [
     {
       key: "CL_VS_Device_WashingMachine",
