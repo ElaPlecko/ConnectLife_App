@@ -599,6 +599,7 @@ tr:last-child td {
   color: var(--ink);
   font-size: 18px;
   line-height: 1.2;
+  text-align: left;
 }
 
 .appliance-heading p {
