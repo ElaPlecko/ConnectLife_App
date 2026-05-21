@@ -1,6 +1,6 @@
 import { appliances, activities, contentTypes } from "../../data/data.js";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions.js";
-import { flagIcon, iconSvg, Table } from "../../utils/helpers.jsx";
+import { iconSvg, Table } from "../../utils/helpers.jsx";
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   name: condition.label,
@@ -35,7 +35,7 @@ function StatCards({ onNavigate }) {
 function MarketsTable({ limit, onNavigate }) {
   const rows = markets.slice(0, limit || markets.length).map((market) => (
     <tr key={market.name}>
-      <td><span className="market-name">{flagIcon(market)}{market.name}</span></td>
+      <td><span className="market-name">{market.name}</span></td>
       <td>{market.name}</td>
       <td>{market.segments}</td>
       <td><span className={`badge ${market.status.toLowerCase()}`}>{market.status}</span></td>
@@ -108,7 +108,7 @@ function LinksTable() {
 }
 
 function ApplianceSummary() {
-  const headers = ["Appliance", ...markets.map((m) => <>{flagIcon(m)} {m.name}</>)];
+  const headers = ["Appliance", ...markets.map((m) => m.name)];
   const rows = appliances.map((appliance) => {
     const featureList = Object.keys(appliance.features);
     return (
