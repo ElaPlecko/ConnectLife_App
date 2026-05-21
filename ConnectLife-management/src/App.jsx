@@ -7,7 +7,7 @@ import Dashboard from "./components/views/Dashboard";
 import Features from "./components/views/Features";
 import Comparison from "./components/views/Comparison";
 import ApiExplorer from "./components/views/ApiExplorer";
-import { Markets, Segments, Content, Links, Users, AuditLog, Settings } from "./components/views/SimpleViews";
+import { Markets, Content, Links, Users, AuditLog, Settings } from "./components/views/SimpleViews";
 
 function Portal() {
   const [brandColor, setBrandColor] = useState("#009A9D");
@@ -25,7 +25,6 @@ function Portal() {
   const views = {
     dashboard: <Dashboard onNavigate={handleNavigate} />,
     markets: <Markets />,
-    segments: <Segments />,
     features: <Features />,
     content: <Content />,
     links: <Links />,
