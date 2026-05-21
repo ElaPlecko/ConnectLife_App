@@ -1,5 +1,6 @@
 import { appliances, activities, contentTypes } from "../../data/data.js";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions.js";
+import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices.js";
 import { iconSvg, Table } from "../../utils/helpers.jsx";
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
@@ -15,10 +16,10 @@ const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
 
 function StatCards({ onNavigate }) {
   const stats = [
-    ["globe", markets.length.toString(), "Markets", "markets"],
-    ["sliders", "5", "Appliance groups", "features"],
-    ["file", "4", "Content types", "content"],
-    ["link", "4", "External links", "links"],
+  ["globe", markets.length.toString(), "Markets", "markets"],
+  ["sliders", REMOTE_CONFIG_DEVICES.length.toString(), "Appliance groups", "features"],
+  ["file", contentTypes.length.toString(), "Content types", "content"],
+  ["link", linkKeys.length.toString(), "External links", "links"],
   ];
   return (
     <div className="stat-grid">
@@ -79,10 +80,8 @@ function ContentTable() {
   );
 }
 
+const linkKeys = ["Support", "Warranty", "Shop"];
 function LinksTable() {
-
-  const linkKeys = ["Support", "Warranty", "Shop"];
-
   const rows = linkKeys.map((type) => (
     <tr key={type}>
       <td>
