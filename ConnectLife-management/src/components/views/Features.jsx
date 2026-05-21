@@ -12,13 +12,39 @@ function formatFeatureName(key) {
 }
 
 function buildConfigData(parsedConfig, configKey) {
+  const energyKeys = ["energyConsumption", "washingMachineEnergyConsumption"];
+  if (energyKeys.includes(configKey)) {
+    const models = parsedConfig[configKey] ?? {};
+    return {
+      features: [],
+      restrictions: [],
+      modelOverrides: Object.entries(models).map(([model, enabled]) => ({
+        model,
+        overrides: [
+          {
+            key: configKey,
+            name: formatFeatureName(configKey),
+            enabled: Boolean(enabled),
+          },
+        ],
+      })),
+    };
+  }
+
   const defaultConfig = parsedConfig.defaultConfiguration ?? {};
   const deviceConfig = parsedConfig[configKey] ?? {};
 
-  const mergedConfig = {
+  let mergedConfig = {
     ...defaultConfig,
     ...deviceConfig,
   };
+
+  if (Object.keys(mergedConfig).length === 0) {
+    const firstModel = Object.values(parsedConfig).find(
+      (v) => v && typeof v === "object" && !Array.isArray(v)
+    );
+    mergedConfig = { ...(firstModel ?? {}) };
+  }
 
   const features = Object.entries(mergedConfig)
     .filter(([, value]) => typeof value === "boolean")
@@ -166,7 +192,10 @@ function ConfigBlock({ config, primary = false }) {
           <h4>{config.label}</h4>
         </div>
 
-        <ToggleButton enabled={config.features.some((feature) => feature.enabled)} />
+        <ToggleButton enabled={
+          config.features.some((f) => f.enabled) ||
+          config.modelOverrides?.some((m) => m.overrides.some((o) => o.enabled))
+        } />
       </div>
 
       {showFeatureList && (
