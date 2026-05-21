@@ -1,4 +1,4 @@
-import { markets, segments, contentTypes, users, activities } from "../../data/data.js";
+import { segments, contentTypes, users, activities } from "../../data/data.js";
 import { flagIcon, Table } from "../../utils/helpers.jsx";
 import { useState } from "react";
 
@@ -14,7 +14,7 @@ function SimplePanel({ title, action, children }) {
   );
 }
 
-export function Markets() {
+/*export function Markets() {
   const rows = markets.map((market) => (
     <tr key={market.code}>
       <td><span className="market-name">{flagIcon(market)}{market.name}</span></td>
@@ -30,7 +30,7 @@ export function Markets() {
       <Table headers={["Market", "Code", "Segments", "Status", "Last updated", ""]} rows={rows} />
     </SimplePanel>
   );
-}
+}*/
 
 export function Segments() {
   const rows = segments.map(([name, description, marketList]) => (
@@ -138,3 +138,4 @@ export function Settings({ brandColor, setBrandColor }) {
     </section>
   );
 }
+  export { Markets } from "../../pages/Markets";

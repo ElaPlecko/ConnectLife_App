@@ -4,6 +4,7 @@ import { fetchAndActivate, getValue } from "firebase/remote-config";
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
+import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 
 function formatFeatureName(key) {
   return key
@@ -157,7 +158,8 @@ function ConfigBlock({ config, primary = false }) {
   const showFeatureList = !(
     !primary &&
     config.features.length === 1 &&
-    config.features[0].key === config.key
+    config.features[0].key === config.key &&
+    (config.modelOverrides ?? []).length === 0 
   );
 
   const featureOverrideMap = config.features.reduce((map, feature) => {
@@ -270,22 +272,37 @@ function ApplianceSection({ appliance }) {
 
         for (const remoteConfigItem of filteredRemoteKeys) {
           if (remoteConfigItem.type === "boolean") {
-            loadedConfigs.push({
-              key: remoteConfigItem.key,
-              label: `${remoteConfigItem.label} (Feature)`,
-              features: [
-                {
-                  key: remoteConfigItem.key,
-                  name: remoteConfigItem.label,
-                  enabled: getValue(remoteConfig, remoteConfigItem.key).asBoolean(),
-                },
-              ],
-              restrictions: [],
-              modelOverrides: [],
-            });
+          const defaultValue = getValue(remoteConfig, remoteConfigItem.key).asBoolean();
+          const conditions = remoteConfigItem.conditions ?? [];
 
-            continue;
-          }
+          loadedConfigs.push({
+            key: remoteConfigItem.key,
+            label: `${remoteConfigItem.label} (Feature)`,
+            features: [
+              {
+                key: remoteConfigItem.key,
+                name: remoteConfigItem.label,
+                enabled: defaultValue,
+              },
+            ],
+            restrictions: [],
+            modelOverrides: REMOTE_CONFIG_CONDITIONS.map((condition) => {
+              const override = conditions.find((c) => c.label === condition.label);
+              return {
+                model: condition.label,
+                overrides: [
+                  {
+                    key: remoteConfigItem.key,
+                    name: remoteConfigItem.label,
+                    enabled: override !== undefined ? override.value : defaultValue,
+                  },
+                ],
+              };
+            }),
+          });
+
+          continue;
+        }
 
           if (remoteConfigItem.type === "json") {
             const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();

@@ -78,6 +78,15 @@ export const REMOTE_CONFIG_DEVICES = [
         key: "CL_VS_Fridge_StorageAssistance",
         label: "Storage Assistance",
         type: "boolean",
+      },
+      {
+        key: "CL_VS_Fridge_FoodManagement",
+        label: "Food Management",
+        type: "boolean",
+        conditions: [
+          { label: "US-Android-Production", value: false },
+          { label: "US", value: false },
+        ]
       }
     ],
   },
@@ -115,7 +124,40 @@ export const REMOTE_CONFIG_DEVICES = [
           key: "CL_VS_AirConditioner_InAppReview",
           label: "In App Review",
           type: "boolean"
-        }
+        },
+        {
+        key: "CL_VS_AirConditioner_AirCare",
+        label: "Air Care",
+        type: "boolean",
+        conditions: [
+          { label: "US-Android-Production", value: false },
+          { label: "US", value: false },
+          { label: "EU Android", value: false },
+          { label: "EU iOS", value: false },
+        ]
+      },
+      {
+        key: "CL_VS_AirConditioner_EngergyMonitor",
+        label: "Energy Monitor",
+        type: "boolean",
+        conditions: [
+          { label: "US-Android-Production", value: true },
+          { label: "US", value: true },
+          { label: "EU Android", value: true },
+          { label: "EU iOS", value: true },
+        ]
+      },
+      {
+        key: "CL_VS_Home_AirCare",
+        label: "Air Care for Home",
+        type: "boolean",
+        conditions: [
+          { label: "US-Android-Production", value: false },
+          { label: "US", value: false },
+          { label: "EU Android", value: true },
+          { label: "EU iOS", value: true },
+        ]
+      }
     ],
     },
     {
