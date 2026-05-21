@@ -1,9 +1,21 @@
-import { markets, appliances, activities, contentTypes } from "../../data/data.js";
+import { appliances, activities, contentTypes } from "../../data/data.js";
+import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions.js";
 import { flagIcon, iconSvg, Table } from "../../utils/helpers.jsx";
+
+const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
+  name: condition.label,
+  code:
+    condition.countries?.[0]
+      ?.slice(0, 2)
+      .toUpperCase() || "-",
+  segments: condition.platform || "All",
+  status: "Active",
+  updated: "Today",
+}));
 
 function StatCards({ onNavigate }) {
   const stats = [
-    ["globe", "4", "Markets", "markets"],
+    ["globe", markets.length.toString(), "Markets", "markets"],
     ["sliders", "5", "Appliance groups", "features"],
     ["file", "4", "Content types", "content"],
     ["link", "4", "External links", "links"],
@@ -22,9 +34,9 @@ function StatCards({ onNavigate }) {
 
 function MarketsTable({ limit, onNavigate }) {
   const rows = markets.slice(0, limit || markets.length).map((market) => (
-    <tr key={market.code}>
+    <tr key={market.name}>
       <td><span className="market-name">{flagIcon(market)}{market.name}</span></td>
-      <td>{market.code}</td>
+      <td>{market.name}</td>
       <td>{market.segments}</td>
       <td><span className={`badge ${market.status.toLowerCase()}`}>{market.status}</span></td>
       <td>{market.updated}</td>
@@ -35,33 +47,68 @@ function MarketsTable({ limit, onNavigate }) {
 }
 
 function ContentTable() {
+
   const rows = contentTypes.map(([type, description]) => (
     <tr key={type}>
       <td>
         <span className="content-type">
           <span className="mini-icon" />
-          <span><strong>{type}</strong><small>{description}</small></span>
+
+          <span>
+            <strong>{type}</strong>
+            <small>{description}</small>
+          </span>
         </span>
       </td>
-      {markets.map((market) => <td key={market.code}>{market.content[type]}</td>)}
+
+      {markets.map((market) => (
+        <td key={market.name}>-</td>
+      ))}
     </tr>
   ));
-  return <Table headers={["Content type", ...markets.map((m) => <>{flagIcon(m)} {m.code}</>)]} rows={rows} minWidth={620} />;
+
+  return (
+    <Table
+      headers={[
+        "Content type",
+        ...markets.map((m) => <>{m.name}</>),
+      ]}
+      rows={rows}
+      minWidth={620}
+    />
+  );
 }
 
 function LinksTable() {
-  const linkKeys = Object.keys(markets[0].links);
+
+  const linkKeys = ["Support", "Warranty", "Shop"];
+
   const rows = linkKeys.map((type) => (
     <tr key={type}>
-      <td><strong>{type}</strong></td>
-      {markets.map((market) => <td key={market.code}>{market.links[type]}</td>)}
+      <td>
+        <strong>{type}</strong>
+      </td>
+
+      {markets.map((market) => (
+        <td key={market.name}>-</td>
+      ))}
     </tr>
   ));
-  return <Table headers={["Link type", ...markets.map((m) => <>{flagIcon(m)} {m.code}</>)]} rows={rows} minWidth={760} />;
+
+  return (
+    <Table
+      headers={[
+        "Link type",
+        ...markets.map((m) => <>{m.name}</>),
+      ]}
+      rows={rows}
+      minWidth={760}
+    />
+  );
 }
 
 function ApplianceSummary() {
-  const headers = ["Appliance", ...markets.map((m) => <>{flagIcon(m)} {m.code}</>)];
+  const headers = ["Appliance", ...markets.map((m) => <>{flagIcon(m)} {m.name}</>)];
   const rows = appliances.map((appliance) => {
     const featureList = Object.keys(appliance.features);
     return (
@@ -73,8 +120,8 @@ function ApplianceSummary() {
           </span>
         </td>
         {markets.map((market) => {
-          const activeCount = featureList.filter((f) => appliance.features[f][market.code]).length;
-          return <td key={market.code}><span className="score-pill">{activeCount}/{featureList.length}</span></td>;
+          const activeCount = featureList.filter((f) => appliance.features[f][market.name]).length;
+          return <td key={market.name}><span className="score-pill">{activeCount}/{featureList.length}</span></td>;
         })}
       </tr>
     );
