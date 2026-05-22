@@ -143,7 +143,7 @@ function ActivityList() {
   );
 }
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard({ onNavigate, currentUserRole }) {
   return (
     <>
       <StatCards onNavigate={onNavigate} />
@@ -151,7 +151,14 @@ export default function Dashboard({ onNavigate }) {
         <section className="panel">
           <div className="panel-header">
             <h2>Markets</h2>
-            <button className="primary-button" type="button">+ Add Market</button>
+            {currentUserRole === "admin" && (
+            <button
+              className="primary-button"
+              type="button"
+            >
+              + Add Market
+            </button>
+          )}
           </div>
           <MarketsTable onNavigate={onNavigate} />
           <button className="text-link" type="button" onClick={() => onNavigate("markets")}>View all markets -&gt;</button>

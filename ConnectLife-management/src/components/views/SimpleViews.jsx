@@ -98,7 +98,7 @@ export function Links() {
   );
 }
 
-export function Users() {
+/*export function Users() {
   const rows = users.map(([email, role, scope, status]) => (
     <tr key={email}>
       <td>{email}</td>
@@ -112,7 +112,7 @@ export function Users() {
       <Table headers={["User", "Role", "Scope", "Status"]} rows={rows} minWidth={680} />
     </SimplePanel>
   );
-}
+}*/
 
 export function AuditLog() {
   const rows = activities.map(([action, entity, market, time], i) => (
@@ -156,3 +156,4 @@ export function Settings({ brandColor, setBrandColor }) {
   );
 }
   export { Markets } from "../../pages/Markets";
+  export { Users } from "../../pages/Users";

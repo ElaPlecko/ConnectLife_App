@@ -16,26 +16,38 @@ function SimplePanel({ title, action, children }) {
   );
 }
 
-export function Markets() {
+export function Markets({ currentUserRole }) {
+
   const [conditions, setConditions] = useState(
     REMOTE_CONFIG_CONDITIONS
   );
 
   const handleAddMarket = () => {
+
+    if (currentUserRole !== "admin") {
+      return;
+    }
+
     const marketName = prompt("Enter market name");
 
-    if (!marketName) return;
+    if (!marketName) {
+      return;
+    }
 
     const newCondition = {
       label: marketName,
       countries: [marketName],
     };
 
-    setConditions((prev) => [...prev, newCondition]);
+    setConditions((prev) => [
+      ...prev,
+      newCondition,
+    ]);
   };
 
   const rows = conditions.map((condition) => (
     <tr key={condition.label}>
+
       <td>
         <strong>{condition.label}</strong>
       </td>
@@ -55,20 +67,24 @@ export function Markets() {
       </td>
 
       <td className="more">...</td>
+
     </tr>
   ));
 
   return (
     <SimplePanel
       title="Markets"
+
       action={
-        <button
-          className="primary-button"
-          type="button"
-          onClick={handleAddMarket}
-        >
-          + Add Market
-        </button>
+        currentUserRole === "admin" && (
+          <button
+            className="primary-button"
+            type="button"
+            onClick={handleAddMarket}
+          >
+            + Add Market
+          </button>
+        )
       }
     >
       <Table
