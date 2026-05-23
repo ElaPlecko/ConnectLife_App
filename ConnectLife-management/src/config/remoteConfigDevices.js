@@ -167,7 +167,7 @@ export const REMOTE_CONFIG_DEVICES = [
   specialParser: "washerDryer",
   remoteKeys: [
     {
-      key: "CL_VS_Device_WashingMachine",
+      key: "CL_VS_Device_WashinMachine",
       label: "Washing Machine",
       type: "json",
       configKey: "deviceWashingMachine",

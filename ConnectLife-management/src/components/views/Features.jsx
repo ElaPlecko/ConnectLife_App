@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchAndActivate, getValue } from "firebase/remote-config";
-
+import { exportFeaturesToExcel } from "../../utils/exportFeaturesToExcel";
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
@@ -429,6 +429,13 @@ export default function Features() {
     (device) => device.id === selectedDeviceId
   );
 
+  const handleExport = async () => {
+    await exportFeaturesToExcel({
+      country: selectedCountry,
+      platform: selectedPlatform,
+    });
+  };
+
   return (
     <section className="panel page-panel feature-page">
       <div className="feature-toolbar">
@@ -473,6 +480,14 @@ export default function Features() {
             ))}
           </select>
         </label>
+
+        <button
+          className="primary-button export-button"
+          type="button"
+          onClick={handleExport}
+        >
+          Export Excel
+        </button>
       </div>
 
       <div className="feature-shell">

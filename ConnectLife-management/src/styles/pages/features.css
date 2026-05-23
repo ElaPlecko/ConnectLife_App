@@ -339,3 +339,8 @@
   background-size: 6px 6px;
   background-repeat: no-repeat;
 }
+
+.feature-toolbar .export-button {
+  margin-left: auto;
+  margin-bottom: 0.25rem;
+}
