@@ -1,15 +1,39 @@
 :root {
-  --hisense: #009a9d;
-  --hisense-dark: #006f72;
+  --hisense: #00aaa6;
+  --hisense-dark: #00888b;
   --hisense-soft: #e5f7f7;
   --ink: #061a32;
   --muted: #61708b;
   --line: #dce6ee;
   --surface: #ffffff;
+  --surface-soft: #fbfdfe;
   --page: #f6f9fb;
   --red: #ef3340;
   --orange: #f59a23;
   --shadow: 0 20px 48px rgba(6, 26, 50, 0.08);
+  --input-bg: #ffffff;
+  --input-border: #cbd9e4;
+  --sidebar-text: #edfafa;
+  --sidebar-muted: #b8d7d7;
+}
+
+[data-theme="dark"] {
+  --hisense: #00aaa6;
+  --hisense-dark: #00c6c9;
+  --hisense-soft: rgba(0, 184, 188, 0.14);
+  --ink: #edf5f7;
+  --muted: #9aadba;
+  --line: #263740;
+  --surface: #151d21;
+  --surface-soft: #1b252b;
+  --page: #0d1317;
+  --red: #ff6b75;
+  --orange: #ffb35c;
+  --shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+  --input-bg: #111a1f;
+  --input-border: #2d424c;
+  --sidebar-text: #edfafa;
+  --sidebar-muted: #b8d7d7;
 }
 
 * {
@@ -67,8 +91,9 @@ select,
 input {
   min-height: 42px;
   padding: 0 13px;
-  border: 1px solid #cbd9e4;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
 }
+

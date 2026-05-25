@@ -1,4 +1,4 @@
-export default function Sidebar({ currentView, onNavigate }) {
+export default function Sidebar({  currentView, onNavigate, theme, setTheme, }) {
   const navItem = (view, label, pathD) => (
     <button
       className={`nav-item${currentView === view ? " active" : ""}`}
@@ -19,6 +19,16 @@ export default function Sidebar({ currentView, onNavigate }) {
             <small>Manager</small>
           </div>
       </div>
+
+      <button
+        className="theme-toggle"
+        onClick={() =>
+          setTheme((prev) => (prev === "light" ? "dark" : "light"))
+        }
+      >
+        {theme === "light" ? "🌙 Dark mode" : "☀️ Light mode"}
+      </button>
+    
 
       <nav className="nav" aria-label="Main navigation">
         <button

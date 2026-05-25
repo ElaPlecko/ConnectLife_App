@@ -10,7 +10,7 @@
   align-items: center;
   gap: 22px;
   padding: 22px;
-  border-color: #dbe8ed;
+  border-color: var(--line);
   text-align: left;
 }
 
@@ -25,6 +25,7 @@
 
 .stat strong {
   display: block;
+  color: var(--ink);
   font-size: 30px;
   line-height: 1;
 }

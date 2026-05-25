@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
@@ -48,6 +48,15 @@ import { auth } from "./firebase";
   );
 }*/
 function Portal() {
+
+  const [theme, setTheme] = useState(
+    localStorage.getItem("theme") || "light"
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const [brandColor, setBrandColor] = useState("#009A9D");
   const [currentView, setCurrentView] = useState("dashboard");
@@ -107,6 +116,8 @@ function Portal() {
       <Sidebar
         currentView={currentView}
         onNavigate={handleNavigate}
+         theme={theme}
+         setTheme={setTheme}
       />
 
       <main className="app-shell">
