@@ -6,8 +6,7 @@ import Topbar from "./components/Topbar";
 import Dashboard from "./components/views/Dashboard";
 import Features from "./components/views/Features";
 import Comparison from "./components/views/Comparison";
-import ApiExplorer from "./components/views/ApiExplorer";
-import { Markets, Content, Links, Users, AuditLog, Settings } from "./components/views/SimpleViews";
+import { Markets, Content, Links, Users, AuditLog } from "./components/views/SimpleViews";
 import { auth } from "./firebase";
 
 /*function Portal() {
@@ -93,8 +92,6 @@ function Portal() {
 
     comparison: <Comparison />,
 
-    api: <ApiExplorer />,
-
     users: (
       <Users
         currentUserRole={currentUserRole}
@@ -103,12 +100,6 @@ function Portal() {
 
     audit: <AuditLog />,
 
-    settings: (
-      <Settings
-        brandColor={brandColor}
-        setBrandColor={setBrandColor}
-      />
-    ),
   };
 
   return (

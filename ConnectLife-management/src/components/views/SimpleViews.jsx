@@ -130,7 +130,7 @@ export function AuditLog() {
   );
 }
 
-export function Settings({ brandColor, setBrandColor }) {
+/*export function Settings({ brandColor, setBrandColor }) {
   const handleSave = () => {
     document.documentElement.style.setProperty("--hisense", brandColor);
     document.documentElement.style.setProperty("--hisense-dark", brandColor);
@@ -154,6 +154,6 @@ export function Settings({ brandColor, setBrandColor }) {
       </div>
     </section>
   );
-}
+}*/
   export { Markets } from "../../pages/Markets";
   export { Users } from "../../pages/Users";
