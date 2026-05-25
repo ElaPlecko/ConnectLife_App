@@ -1,4 +1,4 @@
-export default function Sidebar({  currentView, onNavigate, theme, setTheme, }) {
+export default function Sidebar({ currentView, onNavigate, theme, setTheme, currentUserRole }) {
   const navItem = (view, label, pathD) => (
     <button
       className={`nav-item${currentView === view ? " active" : ""}`}
@@ -51,9 +51,13 @@ export default function Sidebar({  currentView, onNavigate, theme, setTheme, }) 
     <p>Tools</p>
     {navItem("comparison", "Market Comparison", "M12 3v18M7 6h10M6 6l-3 7h6zM18 6l-3 7h6zM5 21h14")}
 
-    <p>Admin</p>
-    {navItem("users", "Users", "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8")}
-    {navItem("audit", "Audit Log", "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01")}
+      {currentUserRole === "admin" && (
+        <>
+          <p>Admin</p>
+          {navItem("users", "Users", "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8")}
+          {navItem("audit", "Audit Log", "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01")}
+        </>
+      )}
           </nav>
 
       <div className="environment">

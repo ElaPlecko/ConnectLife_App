@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AUTH_USERS } from "../config/authUsers.js";
 import { Table } from "../utils/helpers.jsx";
+import toast from "react-hot-toast";
 
 function SimplePanel({ title, action, children }) {
   return (
@@ -16,7 +17,13 @@ function SimplePanel({ title, action, children }) {
   );
 }
 
-export function Users({ currentUserRole }){
+export function Users({ currentUserRole }) {
+
+  const [showInviteModal, setShowInviteModal] =
+    useState(false);
+
+  const [inviteEmail, setInviteEmail] =
+    useState("");
 
   const [users, setUsers] = useState(
     AUTH_USERS.map((user, index) => ({
@@ -58,16 +65,14 @@ export function Users({ currentUserRole }){
 
   const handleInviteUser = () => {
 
-    const email = prompt("Enter user email");
-
-    if (!email) {
+    if (!inviteEmail) {
       return;
     }
 
     const newUser = {
       id: Date.now(),
 
-      email,
+      email: inviteEmail,
 
       provider: "password",
 
@@ -78,18 +83,18 @@ export function Users({ currentUserRole }){
 
     setUsers((prev) => [...prev, newUser]);
 
+    toast.success("Invite sent", {
+      duration: 3000,
+    });
+
     window.location.href = `
-        mailto:${email}
-        ?subject=ConnectLife Admin Dashboard Access
-        &body=Hello,
+      mailto:${inviteEmail}
+      ?subject=ConnectLife Admin Dashboard Access
+    `;
 
-        You have been invited to access the ConnectLife Admin Dashboard.
+    setInviteEmail("");
 
-        Please contact your administrator to receive your login credentials.
-
-        Best regards,
-        ConnectLife Team
-        `;
+    setShowInviteModal(false);
   };
 
   const rows = users.map((user) => (
@@ -104,7 +109,9 @@ export function Users({ currentUserRole }){
       </td>
 
       <td>
-        <span className={`badge ${user.status.toLowerCase()}`}>
+        <span
+          className={`badge ${user.status.toLowerCase()}`}
+        >
           {user.status}
         </span>
       </td>
@@ -112,48 +119,97 @@ export function Users({ currentUserRole }){
       <td>
 
         {currentUserRole === "admin" &&
-            user.role === "viewer" && (
+          user.role === "viewer" && (
             <button
-                className="text-link"
-                type="button"
-                onClick={() => handleToggleStatus(user.id)}
+              className="text-link"
+              type="button"
+              onClick={() =>
+                handleToggleStatus(user.id)
+              }
             >
-                {user.status === "Active"
+              {user.status === "Active"
                 ? "Disable"
                 : "Enable"}
             </button>
-        )}
+          )}
 
-</td>
+      </td>
 
     </tr>
   ));
 
   return (
-  <SimplePanel
-    title="Users"
-    action={
-      currentUserRole === "admin" && (
-        <button
-          className="primary-button"
-          type="button"
-          onClick={handleInviteUser}
-        >
-          Invite User
-        </button>
-      )
-    }
-  >
-    <Table
-      headers={[
-        "User",
-        "Role",
-        "Status",
-        "Actions",
-      ]}
-      rows={rows}
-      minWidth={680}
-    />
-  </SimplePanel>
-);
+    <>
+      <SimplePanel
+        title="Users"
+        action={
+          currentUserRole === "admin" && (
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() =>
+                setShowInviteModal(true)
+              }
+            >
+              Invite User
+            </button>
+          )
+        }
+      >
+        <Table
+          headers={[
+            "User",
+            "Role",
+            "Status",
+            "Actions",
+          ]}
+          rows={rows}
+          minWidth={680}
+        />
+      </SimplePanel>
+
+      {showInviteModal && (
+        <div className="invite-modal-overlay">
+
+          <div className="invite-modal">
+
+            <h2>Invite User</h2>
+
+            <p>
+              Send dashboard access invitation
+            </p>
+
+            <input
+              type="email"
+              placeholder="Enter user email..."
+              value={inviteEmail}
+              onChange={(e) =>
+                setInviteEmail(e.target.value)
+              }
+            />
+
+            <div className="invite-modal-actions">
+
+              <button
+                className="secondary-button"
+                onClick={() =>
+                  setShowInviteModal(false)
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                className="primary-button"
+                onClick={handleInviteUser}
+              >
+                Send Invite
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
