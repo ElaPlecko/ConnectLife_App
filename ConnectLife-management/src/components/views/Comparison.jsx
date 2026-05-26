@@ -28,15 +28,22 @@ function useResolvedBooleans() {
   return { defaults, loading };
 }
 
+const DEFAULT_MARKET = "Default";
+
 export default function Comparison() {
-  const [condA, setCondA] = useState(REMOTE_CONFIG_CONDITIONS[0]?.label ?? "");
-  const [condB, setCondB] = useState(REMOTE_CONFIG_CONDITIONS[1]?.label ?? "");
+  // ↓ SPREMEMBA: privzeto "Default value" za oba dropdowna
+  const [condA, setCondA] = useState(DEFAULT_MARKET);
+  const [condB, setCondB] = useState(REMOTE_CONFIG_CONDITIONS[0]?.label ?? "");
   const { defaults, loading } = useResolvedBooleans();
 
+  // ↓ SPREMEMBA: ko je condLabel "Default value", vrni kar Firebase default
   const resolve = (remoteKey, condLabel) => {
+    if (condLabel === DEFAULT_MARKET) return defaults[remoteKey.key] ?? false;
     const match = (remoteKey.conditions ?? []).find((c) => c.label === condLabel);
     return match !== undefined ? match.value : (defaults[remoteKey.key] ?? false);
   };
+
+  const allOptions = [DEFAULT_MARKET, ...REMOTE_CONFIG_CONDITIONS.map((c) => c.label)];
 
   return (
     <section className="panel page-panel comparison-page">
@@ -46,24 +53,32 @@ export default function Comparison() {
       </div>
 
       <div className="compare-selectors">
-      <label>
-        <span>Condition A</span>
-        <select value={condA} onChange={(e) => setCondA(e.target.value)}>
-          {REMOTE_CONFIG_CONDITIONS.filter((c) => c.label !== condB).map((c) => (
-            <option key={c.label} value={c.label}>{c.label}</option>
-          ))}
-        </select>
-      </label>
-      <span className="vs">vs</span>
-      <label>
-        <span>Condition B</span>
-        <select value={condB} onChange={(e) => setCondB(e.target.value)}>
-          {REMOTE_CONFIG_CONDITIONS.filter((c) => c.label !== condA).map((c) => (
-            <option key={c.label} value={c.label}>{c.label}</option>
-          ))}
-        </select>
-      </label>
-    </div>
+        <label>
+          <span>Condition 1</span>
+          {/* ↓ SPREMEMBA: "Default value" kot opcija */}
+          <select value={condA} onChange={(e) => setCondA(e.target.value)}>
+            {allOptions
+              .filter((label) => label !== condB)
+              .map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+          </select>
+        </label>
+
+        <span className="vs">vs</span>
+
+        <label>
+          <span>Condition 2</span>
+          {/* ↓ SPREMEMBA: "Default value" kot opcija */}
+          <select value={condB} onChange={(e) => setCondB(e.target.value)}>
+            {allOptions
+              .filter((label) => label !== condA)
+              .map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+          </select>
+        </label>
+      </div>
 
       {loading ? (
         <div className="feature-error">Loading...</div>

@@ -13,22 +13,29 @@ function formatFeatureName(key) {
 }
 
 function buildConfigData(parsedConfig, configKey) {
-  const energyKeys = ["energyConsumption", "washingMachineEnergyConsumption"];
+  const energyKeys = [
+    "energyConsumption",
+    "washingMachineEnergyConsumption",
+  ];
+
   if (energyKeys.includes(configKey)) {
     const models = parsedConfig[configKey] ?? {};
+
     return {
       features: [],
       restrictions: [],
-      modelOverrides: Object.entries(models).map(([model, enabled]) => ({
-        model,
-        overrides: [
-          {
-            key: configKey,
-            name: formatFeatureName(configKey),
-            enabled: Boolean(enabled),
-          },
-        ],
-      })),
+      modelOverrides: Object.entries(models).map(
+        ([model, enabled]) => ({
+          model,
+          overrides: [
+            {
+              key: configKey,
+              name: formatFeatureName(configKey),
+              enabled: Boolean(enabled),
+            },
+          ],
+        })
+      ),
     };
   }
 
@@ -44,6 +51,7 @@ function buildConfigData(parsedConfig, configKey) {
     const firstModel = Object.values(parsedConfig).find(
       (v) => v && typeof v === "object" && !Array.isArray(v)
     );
+
     mergedConfig = { ...(firstModel ?? {}) };
   }
 
@@ -135,7 +143,9 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
           }${expanded ? " is-open" : ""}`}
           type="button"
           onClick={onToggle}
-          aria-label={expanded ? "Collapse model overrides" : "Expand model overrides"}
+          aria-label={
+            expanded ? "Collapse model overrides" : "Expand model overrides"
+          }
         >
           <span aria-hidden="true" />
         </button>
@@ -147,7 +157,10 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
 
           <div className="model-list">
             {overrides.map((item) => (
-              <div className="model-override" key={`${item.model}-${feature.key}`}>
+              <div
+                className="model-override"
+                key={`${item.model}-${feature.key}`}
+              >
                 <span className="model-name">{item.model}</span>
                 <ToggleButton enabled={item.enabled} />
               </div>
@@ -164,7 +177,7 @@ function ConfigBlock({ config, primary = false }) {
     !primary &&
     config.features.length === 1 &&
     config.features[0].key === config.key &&
-    (config.modelOverrides ?? []).length === 0 
+    (config.modelOverrides ?? []).length === 0
   );
 
   const featureOverrideMap = config.features.reduce((map, feature) => {
@@ -175,10 +188,7 @@ function ConfigBlock({ config, primary = false }) {
         );
 
         return override
-          ? {
-              model: item.model,
-              enabled: override.enabled,
-            }
+          ? { model: item.model, enabled: override.enabled }
           : null;
       })
       .filter(Boolean);
@@ -190,15 +200,21 @@ function ConfigBlock({ config, primary = false }) {
 
   return (
     <div className={`config-block${primary ? " is-primary" : ""}`}>
-      <div className={`config-heading${showFeatureList ? "" : " is-standalone"}`}>
+      <div
+        className={`config-heading${showFeatureList ? "" : " is-standalone"}`}
+      >
         <div>
           <h4>{config.label}</h4>
         </div>
 
-        <ToggleButton enabled={
-          config.features.some((f) => f.enabled) ||
-          config.modelOverrides?.some((m) => m.overrides.some((o) => o.enabled))
-        } />
+        <ToggleButton
+          enabled={
+            config.features.some((f) => f.enabled) ||
+            config.modelOverrides?.some((m) =>
+              m.overrides.some((o) => o.enabled)
+            )
+          }
+        />
       </div>
 
       {showFeatureList && (
@@ -247,15 +263,15 @@ function ConfigBlock({ config, primary = false }) {
   );
 }
 
-function getConditionValue(remoteConfigItem, selectedCountry, selectedPlatform, defaultValue) {
+// ↓ SPREMEMBA 1: Ko je selectedMarket "Default value", vrni kar defaultValue
+function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
+  if (selectedMarket === "Default") return defaultValue;
+
   const itemConditions = remoteConfigItem.conditions ?? [];
 
-  const matchedCondition = REMOTE_CONFIG_CONDITIONS.find((condition) => {
-  const countryMatches = condition.countries?.includes(selectedCountry);
-  const platformMatches = selectedPlatform === "all" || !condition.platform || condition.platform === selectedPlatform;
-
-    return countryMatches && platformMatches;
-  });
+  const matchedCondition = REMOTE_CONFIG_CONDITIONS.find(
+    (condition) => condition.label === selectedMarket
+  );
 
   if (!matchedCondition) return defaultValue;
 
@@ -266,25 +282,11 @@ function getConditionValue(remoteConfigItem, selectedCountry, selectedPlatform, 
   return override ? override.value : defaultValue;
 }
 
-function getAvailableCountries() {
-  return [
-    ...new Set(
-      REMOTE_CONFIG_CONDITIONS.flatMap((condition) => condition.countries ?? [])
-    ),
-  ].sort();
+function getAvailableMarkets() {
+  return REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label).sort();
 }
 
-function getAvailablePlatforms() {
-  return [
-    ...new Set(
-      REMOTE_CONFIG_CONDITIONS
-        .map((condition) => condition.platform)
-        .filter(Boolean)
-    ),
-  ].sort();
-}
-
-function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
+function ApplianceSection({ appliance, selectedMarket }) {
   const [open, setOpen] = useState(false);
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -310,12 +312,14 @@ function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
 
         for (const remoteConfigItem of filteredRemoteKeys) {
           if (remoteConfigItem.type === "boolean") {
-            const defaultValue = getValue(remoteConfig, remoteConfigItem.key).asBoolean();
+            const defaultValue = getValue(
+              remoteConfig,
+              remoteConfigItem.key
+            ).asBoolean();
 
             const enabled = getConditionValue(
               remoteConfigItem,
-              selectedCountry,
-              selectedPlatform,
+              selectedMarket,
               defaultValue
             );
 
@@ -337,11 +341,15 @@ function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
           }
 
           if (remoteConfigItem.type === "json") {
-            const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
+            const rawValue = getValue(
+              remoteConfig,
+              remoteConfigItem.key
+            ).asString();
 
             if (!rawValue) continue;
 
             const parsedConfig = JSON.parse(rawValue);
+
             const data = buildConfigData(parsedConfig, remoteConfigItem.configKey);
 
             loadedConfigs.push({
@@ -362,12 +370,13 @@ function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
     }
 
     loadRemoteConfig();
-  }, [appliance, selectedCountry, selectedPlatform]);
+  }, [appliance, selectedMarket]);
 
   const totalFeatures = configs.reduce(
     (sum, config) => sum + config.features.length,
     0
   );
+
   const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
 
   return (
@@ -412,21 +421,18 @@ function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
 
 export default function Features() {
   const [selectedDeviceId, setSelectedDeviceId] = useState("all");
-  const countries = getAvailableCountries();
-  const platforms = getAvailablePlatforms();
 
-  const [selectedCountry, setSelectedCountry] = useState(countries[0] ?? "");
-  const [selectedPlatform, setSelectedPlatform] = useState("all");
+  const markets = getAvailableMarkets();
+
+  // ↓ SPREMEMBA 2: "Default value" je privzeto izbran
+  const [selectedMarket, setSelectedMarket] = useState("Default");
 
   const selectedDevice = REMOTE_CONFIG_DEVICES.find(
     (device) => device.id === selectedDeviceId
   );
 
   const handleExport = async () => {
-    await exportFeaturesToExcel({
-      country: selectedCountry,
-      platform: selectedPlatform,
-    });
+    await exportFeaturesToExcel({ market: selectedMarket });
   };
 
   return (
@@ -434,41 +440,35 @@ export default function Features() {
       <div className="feature-toolbar">
         <label>
           Appliance
-          <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
-          <option value="all">All appliances</option>
-          {REMOTE_CONFIG_DEVICES.map((device) => (
-            <option key={device.id} value={device.id}>
-              {device.name}
-            </option>
-          ))}
-        </select>
-        </label>
-
-        <label>
-          Market
           <select
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
+            value={selectedDeviceId}
+            onChange={(e) => setSelectedDeviceId(e.target.value)}
           >
-            {countries.map((country) => (
-              <option key={country} value={country}>
-                {country}
+            <option value="all">All appliances</option>
+
+            {REMOTE_CONFIG_DEVICES.map((device) => (
+              <option key={device.id} value={device.id}>
+                {device.name}
               </option>
             ))}
           </select>
         </label>
 
         <label>
-          Platform
-          <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)}>
-          <option value="all">All platforms</option>
+          Market
+          {/* ↓ SPREMEMBA 3: "Default value" kot prva opcija v dropdownu */}
+          <select
+            value={selectedMarket}
+            onChange={(e) => setSelectedMarket(e.target.value)}
+          >
+            <option value="Default">Default</option>
 
-          {platforms.map((platform) => (
-            <option key={platform} value={platform}>
-              {platform}
-            </option>
-          ))}
-        </select>
+            {markets.map((market) => (
+              <option key={market} value={market}>
+                {market}
+              </option>
+            ))}
+          </select>
         </label>
 
         <button
@@ -487,15 +487,13 @@ export default function Features() {
                 <ApplianceSection
                   key={device.id}
                   appliance={device}
-                  selectedCountry={selectedCountry}
-                  selectedPlatform={selectedPlatform}
+                  selectedMarket={selectedMarket}
                 />
               ))
             : selectedDevice && (
                 <ApplianceSection
                   appliance={selectedDevice}
-                  selectedCountry={selectedCountry}
-                  selectedPlatform={selectedPlatform}
+                  selectedMarket={selectedMarket}
                 />
               )}
         </div>

@@ -6,20 +6,21 @@ import { REMOTE_CONFIG_DEVICES } from "../config/remoteConfigDevices";
 import { REMOTE_CONFIG_CONDITIONS } from "../config/remoteConfigConditions";
 import { duplicatedBooleanFeatures } from "../config/washerDryerParser";
 
+const DEFAULT_MARKET = "Default";
+
 function formatFeatureName(key) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (char) => char.toUpperCase());
 }
+function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
+  if (selectedMarket === DEFAULT_MARKET) return defaultValue;
 
-function getConditionValue(remoteConfigItem, selectedCountry, selectedPlatform, defaultValue) {
   const itemConditions = remoteConfigItem.conditions ?? [];
 
-  const matchedCondition = REMOTE_CONFIG_CONDITIONS.find((condition) => {
-    const countryMatches = condition.countries?.includes(selectedCountry);
-    const platformMatches = !condition.platform || condition.platform === selectedPlatform;
-    return countryMatches && platformMatches;
-  });
+  const matchedCondition = REMOTE_CONFIG_CONDITIONS.find(
+    (condition) => condition.label === selectedMarket
+  );
 
   if (!matchedCondition) return defaultValue;
 
@@ -30,7 +31,7 @@ function getConditionValue(remoteConfigItem, selectedCountry, selectedPlatform, 
   return override ? override.value : defaultValue;
 }
 
-function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, country, platform }) {
+function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, market }) {
   const defaultConfig = parsedConfig.defaultConfiguration ?? {};
   const deviceConfig = parsedConfig[remoteConfigItem.configKey] ?? {};
 
@@ -46,8 +47,7 @@ function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, country, p
       rows.push({
         Appliance: appliance.name,
         Category: appliance.category,
-        Market: country,
-        Platform: platform,
+        Market: market,
         Config: remoteConfigItem.label,
         Feature: formatFeatureName(featureKey),
         Key: featureKey,
@@ -62,8 +62,7 @@ function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, country, p
         rows.push({
           Appliance: appliance.name,
           Category: appliance.category,
-          Market: country,
-          Platform: platform,
+          Market: market,
           Config: remoteConfigItem.label,
           Feature: formatFeatureName(featureKey),
           Key: featureKey,
@@ -100,8 +99,7 @@ function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, country, p
       rows.push({
         Appliance: appliance.name,
         Category: appliance.category,
-        Market: country,
-        Platform: platform,
+        Market: market,
         Config: remoteConfigItem.label,
         Feature: formatFeatureName(featureKey),
         Key: featureKey,
@@ -111,11 +109,9 @@ function extractJsonRows({ appliance, remoteConfigItem, parsedConfig, country, p
       });
     });
   });
-
   return rows;
 }
-
-export async function exportFeaturesToExcel({ country, platform }) {
+export async function exportFeaturesToExcel({ market }) {
   await fetchAndActivate(remoteConfig);
 
   const rows = [];
@@ -134,16 +130,14 @@ export async function exportFeaturesToExcel({ country, platform }) {
 
         const enabled = getConditionValue(
           remoteConfigItem,
-          country,
-          platform,
+          market,
           defaultValue
         );
 
         rows.push({
           Appliance: appliance.name,
           Category: appliance.category,
-          Market: country,
-          Platform: platform,
+          Market: market,
           Config: remoteConfigItem.label,
           Feature: remoteConfigItem.label,
           Key: remoteConfigItem.key,
@@ -166,8 +160,7 @@ export async function exportFeaturesToExcel({ country, platform }) {
             appliance,
             remoteConfigItem,
             parsedConfig,
-            country,
-            platform,
+            market,
           })
         );
       }
@@ -179,8 +172,9 @@ export async function exportFeaturesToExcel({ country, platform }) {
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Features");
 
-  const safeCountry = country.replaceAll(" ", "_");
-  const fileName = `features_${safeCountry}_${platform}.xlsx`;
+  // ↓ SPREMEMBA: ime datoteke iz market labela
+  const safeMarket = market.replaceAll(" ", "_");
+  const fileName = `features_${safeMarket}.xlsx`;
 
   XLSX.writeFile(workbook, fileName);
 }
