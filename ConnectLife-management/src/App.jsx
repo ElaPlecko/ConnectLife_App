@@ -71,13 +71,14 @@ function Portal() {
 
     markets: (
       <Markets
-        currentUserRole={currentUserRole}
+        currentUserRole={currentUserRole} isDark={theme === "dark"} 
       />
     ),
 
     features: <Features />,
 
     content: <Content />,
+
 
     links: <Links />,
 
