@@ -389,3 +389,67 @@ tr:last-child td {
     opacity: 1;
   }
 }
+
+.markets-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.markets-skeleton-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr 0.7fr 0.5fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.skeleton-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 154, 157, 0.14),
+    transparent
+  );
+  animation: skeleton-shimmer 1.25s infinite;
+}
+
+.skeleton-market-name {
+  height: 15px;
+  width: 70%;
+}
+
+.skeleton-market-countries {
+  height: 15px;
+  width: 90%;
+}
+
+.skeleton-market-platform {
+  height: 15px;
+  width: 55%;
+}
+
+.skeleton-market-badge {
+  height: 24px;
+  width: 70px;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

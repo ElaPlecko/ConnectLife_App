@@ -76,26 +76,75 @@
 }
 
 .nav-item {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  min-height: 48px;
+  min-height: 50px;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 0 13px;
+  padding: 0 15px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 10px;
   background: transparent;
   color: var(--sidebar-text);
   font-size: 15px;
   font-weight: 750;
   text-align: left;
+  transition:
+    background 0.22s ease,
+    color 0.22s ease,
+    transform 0.18s ease,
+    box-shadow 0.22s ease;
 }
 
-.nav-item:hover,
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: #7ff9f6;
+  opacity: 0;
+  transform: scaleY(0.3);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.nav-item:hover{
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(3px);
+}
+
 .nav-item.active {
-  background: linear-gradient(90deg, var(--hisense), #07aaa7);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 154, 157, 0.95),
+      rgba(7, 170, 167, 0.92)
+    );
   color: #fff;
-  box-shadow: 0 12px 22px rgba(0, 154, 157, 0.28);
+  box-shadow:
+    0 12px 22px rgba(0, 154, 157, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.nav-item.active::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.nav-item svg {
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.nav-item.active svg {
+  transform: scale(1.08);
 }
 
 .environment {
@@ -163,6 +212,7 @@
 
 .panel {
   padding: 22px;
+  margin: 0.5rem;
 }
 
 .page-panel {

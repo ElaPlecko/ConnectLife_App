@@ -18,6 +18,21 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+  margin-top: 0.5rem;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.appliance-section:hover {
+  transform: translateY(-3px);
+
+  border-color: rgba(0, 154, 157, 0.4);
+
+  box-shadow:
+    0 12px 28px rgba(0, 154, 157, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .appliance-heading {
@@ -71,6 +86,14 @@
   color: var(--muted);
   font-size: 0;
   line-height: 0;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+  border-radius: 8px;
+}
+
+.chevron-button:hover {
+  background: rgba(0, 154, 157, 0.08);
 }
 
 .chevron-button::before {
@@ -80,6 +103,7 @@
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
+  transition: transform 0.22s ease;
 }
 
 .chevron-button.is-open::before {
@@ -363,4 +387,51 @@
   color: var(--hisense);
 
   opacity: 0.95;
+}
+
+.skeleton-config {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.skeleton-line,
+.skeleton-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.skeleton-line::after,
+.skeleton-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 154, 157, 0.14),
+    transparent
+  );
+  animation: skeleton-shimmer 1.25s infinite;
+}
+
+.skeleton-title {
+  width: 36%;
+  height: 14px;
+  margin-bottom: 18px;
+}
+
+.skeleton-row {
+  height: 44px;
+  margin-top: 10px;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }

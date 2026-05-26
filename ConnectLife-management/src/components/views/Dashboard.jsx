@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { appliances, activities, contentTypes } from "../../data/data.js";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions.js";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices.js";
 import { iconSvg, Table } from "../../utils/helpers.jsx";
+import { motion } from "framer-motion";
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   name: condition.label,
@@ -14,6 +16,32 @@ const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   updated: "Today",
 }));
 
+function AnimatedNumber({ value }) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const target = Number(value);
+    let start = 0;
+    const duration = 900;
+    const startTime = performance.now();
+
+    function update(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setCurrent(Math.round(start + (target - start) * eased));
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }, [value]);
+
+  return current;
+}
+
 function StatCards({ onNavigate }) {
   const stats = [
   ["globe", markets.length.toString(), "Markets", "markets"],
@@ -22,14 +50,42 @@ function StatCards({ onNavigate }) {
   ["link", linkKeys.length.toString(), "External links", "links"],
   ];
   return (
-    <div className="stat-grid">
+    <motion.div
+      className="stat-grid"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: {
+          transition: {
+            staggerChildren: 0.08,
+          },
+        },
+      }}
+    >
       {stats.map(([icon, number, label, view]) => (
-        <button key={view} className="stat" type="button" onClick={() => onNavigate(view)}>
+        <motion.button
+          key={view}
+          className="stat"
+          type="button"
+          onClick={() => onNavigate(view)}
+          variants={{
+            hidden: { opacity: 0, y: 14 },
+            show: { opacity: 1, y: 0 },
+          }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
           {iconSvg(icon)}
-          <div><strong>{number}</strong><span>{label}</span><em>View all -&gt;</em></div>
-        </button>
+          <div>
+            <strong>
+              <AnimatedNumber value={number} />
+            </strong>
+            <span>{label}</span>
+            <em>View all -&gt;</em>
+          </div>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

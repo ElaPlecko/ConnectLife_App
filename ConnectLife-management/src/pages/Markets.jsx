@@ -15,6 +15,21 @@ function SimplePanel({ title, action, children }) {
   );
 }
 
+function MarketsSkeleton() {
+  return (
+    <div className="markets-skeleton">
+      {[1, 2, 3, 4].map((item) => (
+        <div className="markets-skeleton-row" key={item}>
+          <div className="skeleton-line skeleton-market-name" />
+          <div className="skeleton-line skeleton-market-countries" />
+          <div className="skeleton-line skeleton-market-platform" />
+          <div className="skeleton-line skeleton-market-badge" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Markets({ currentUserRole, isDark }) {
   const { conditions, loading, error } = useRemoteConfigConditions();
 
@@ -33,7 +48,7 @@ export function Markets({ currentUserRole, isDark }) {
       <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
         
         <div style={{ flex: 1, minWidth: 0 }}>
-          {loading && <div className="feature-loading">Loading markets…</div>}
+          {loading && <MarketsSkeleton />}
           {error && <div className="feature-error">{error}</div>}
           {!loading && !error && (
             <Table

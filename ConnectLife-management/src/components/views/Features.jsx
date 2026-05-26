@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fetchAndActivate, getValue } from "firebase/remote-config";
 import { exportFeaturesToExcel } from "../../utils/exportFeaturesToExcel";
 import { remoteConfig } from "../../firebase";
@@ -119,6 +120,17 @@ function ToggleButton({ enabled }) {
   );
 }
 
+function FeatureSkeleton() {
+  return (
+    <div className="skeleton-config">
+      <div className="skeleton-line skeleton-title" />
+      <div className="skeleton-row" />
+      <div className="skeleton-row" />
+      <div className="skeleton-row" />
+    </div>
+  );
+}
+
 function FeatureRow({ feature, overrides, expanded, onToggle }) {
   const hasOverrides = overrides.length > 0;
 
@@ -152,23 +164,39 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
         </button>
       </div>
 
-      {hasOverrides && expanded && (
-        <div className="model-panel">
-          <strong className="model-panel-title">Model overrides</strong>
+      <AnimatePresence initial={false}>
+        {hasOverrides && expanded && (
+          <motion.div
+            className="model-panel"
+            initial={{ height: 0, opacity: 0, y: -6 }}
+            animate={{ height: "auto", opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -6 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <strong className="model-panel-title">Model overrides</strong>
 
-          <div className="model-list">
-            {overrides.map((item) => (
-              <div
-                className="model-override"
-                key={`${item.model}-${feature.key}`}
-              >
-                <span className="model-name">{item.model}</span>
-                <ToggleButton enabled={item.enabled} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+            <div className="model-list">
+              {overrides.map((item, index) => (
+                <motion.div
+                  className="model-override"
+                  key={`${item.model}-${feature.key}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.18,
+                    delay: index * 0.035,
+                    ease: "easeOut",
+                  }}
+                >
+                  <span className="model-name">{item.model}</span>
+                  <ToggleButton enabled={item.enabled} />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -409,20 +437,30 @@ function ApplianceSection({ appliance, selectedMarket }) {
         />
       </button>
 
-      {open && (
-        <div className="appliance-body">
-          {error && <div className="feature-error">{error}</div>}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            className="appliance-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            {loading && <FeatureSkeleton />}
 
-          {!error &&
-            configs.map((config, index) => (
-              <ConfigBlock
-                key={config.key}
-                config={config}
-                primary={index === 0 && config.key === primaryKey}
-              />
-            ))}
-        </div>
-      )}
+            {error && <div className="feature-error">{error}</div>}
+
+            {!loading && !error && configs.map((config, index) => (
+                <ConfigBlock
+                  key={config.key}
+                  config={config}
+                  primary={index === 0 && config.key === primaryKey}
+                />
+              ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
@@ -489,22 +527,31 @@ export default function Features() {
       </div>
 
       <div className="feature-shell">
-        <div className="appliance-stack">
-          {selectedDeviceId === "all"
-            ? REMOTE_CONFIG_DEVICES.map((device) => (
-                <ApplianceSection
-                  key={device.id}
-                  appliance={device}
-                  selectedMarket={selectedMarket}
-                />
-              ))
-            : selectedDevice && (
-                <ApplianceSection
-                  appliance={selectedDevice}
-                  selectedMarket={selectedMarket}
-                />
-              )}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${selectedDeviceId}-${selectedMarket}`}
+            className="appliance-stack"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            {selectedDeviceId === "all"
+              ? REMOTE_CONFIG_DEVICES.map((device) => (
+                  <ApplianceSection
+                    key={device.id}
+                    appliance={device}
+                    selectedMarket={selectedMarket}
+                  />
+                ))
+              : selectedDevice && (
+                  <ApplianceSection
+                    appliance={selectedDevice}
+                    selectedMarket={selectedMarket}
+                  />
+                )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );

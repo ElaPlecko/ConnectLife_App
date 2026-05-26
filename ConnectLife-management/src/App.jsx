@@ -16,6 +16,8 @@ import Dashboard from "./components/views/Dashboard";
 import Features from "./components/views/Features";
 import Comparison from "./components/views/Comparison";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Markets,
   Content,
@@ -111,7 +113,17 @@ function Portal() {
           id="app-view"
           aria-live="polite"
         >
-          {views[currentView]}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              {views[currentView]}
+            </motion.div>
+          </AnimatePresence>
         </section>
       </main>
     </div>

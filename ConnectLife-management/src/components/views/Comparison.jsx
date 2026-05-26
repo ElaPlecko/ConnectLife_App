@@ -3,6 +3,7 @@ import { fetchAndActivate, getValue } from "firebase/remote-config";
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
+import { motion, AnimatePresence } from "framer-motion";
 
 function useResolvedBooleans() {
   const [defaults, setDefaults] = useState({});
@@ -29,6 +30,31 @@ function useResolvedBooleans() {
 }
 
 const DEFAULT_MARKET = "Default";
+
+function ComparisonSkeleton() {
+  return (
+    <div className="comparison-stack">
+      {[1, 2, 3].map((item) => (
+        <section className="comparison-appliance" key={item}>
+          <div className="skeleton-heading">
+            <div className="skeleton-circle" />
+            <div>
+              <div className="skeleton-line skeleton-title" />
+              <div className="skeleton-line skeleton-small" />
+            </div>
+          </div>
+
+          <div className="compare-box">
+            <div className="skeleton-compare-header" />
+            <div className="skeleton-row" />
+            <div className="skeleton-row" />
+            <div className="skeleton-row" />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 export default function Comparison() {
   // ↓ SPREMEMBA: privzeto "Default value" za oba dropdowna
@@ -81,51 +107,60 @@ export default function Comparison() {
       </div>
 
       {loading ? (
-        <div className="feature-error">Loading...</div>
+        <ComparisonSkeleton />
       ) : (
-        <div className="comparison-stack">
-          {REMOTE_CONFIG_DEVICES.map((device) => {
-            const booleanKeys = device.remoteKeys.filter((k) => k.type === "boolean");
-            if (booleanKeys.length === 0) return null;
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${condA}-${condB}`}
+            className="comparison-stack"
+            initial={{ opacity: 0, y: 18, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.985 }}
+            transition={{ duration: 0.32, ease: "easeOut" }}
+          >
+            {REMOTE_CONFIG_DEVICES.map((device) => {
+              const booleanKeys = device.remoteKeys.filter((k) => k.type === "boolean");
+              if (booleanKeys.length === 0) return null;
 
-            return (
-              <section key={device.id} className="comparison-appliance">
-                <div className="appliance-heading">
-                  <span className="mini-icon appliance-icon" />
-                  <div>
-                    <h3>{device.name}</h3>
-                    <p>{device.category}</p>
+              return (
+                <section key={device.id} className="comparison-appliance">
+                  <div className="appliance-heading">
+                    <span className="mini-icon appliance-icon" />
+                    <div>
+                      <h3>{device.name}</h3>
+                      <p>{device.category}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="compare-box">
-                  <div className="compare-section">
-                    <span>Feature</span>
-                    <span>{condA}</span>
-                    <span>{condB}</span>
+                  <div className="compare-box">
+                    <div className="compare-section">
+                      <span>Feature</span>
+                      <span>{condA}</span>
+                      <span>{condB}</span>
+                    </div>
+
+                    {booleanKeys.map((remoteKey) => {
+                      const aOn = resolve(remoteKey, condA);
+                      const bOn = resolve(remoteKey, condB);
+                      const differs = aOn !== bOn;
+
+                      return (
+                        <div
+                          key={remoteKey.key}
+                          className={`compare-row${differs ? " compare-row--diff" : ""}`}
+                        >
+                          <span>{remoteKey.label}</span>
+                          <span className={aOn ? "on-text" : "off-text"}>{aOn ? "ON" : "OFF"}</span>
+                          <span className={bOn ? "on-text" : "off-text"}>{bOn ? "ON" : "OFF"}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  {booleanKeys.map((remoteKey) => {
-                    const aOn = resolve(remoteKey, condA);
-                    const bOn = resolve(remoteKey, condB);
-                    const differs = aOn !== bOn;
-
-                    return (
-                      <div
-                        key={remoteKey.key}
-                        className={`compare-row${differs ? " compare-row--diff" : ""}`}
-                      >
-                        <span>{remoteKey.label}</span>
-                        <span className={aOn ? "on-text" : "off-text"}>{aOn ? "ON" : "OFF"}</span>
-                        <span className={bOn ? "on-text" : "off-text"}>{bOn ? "ON" : "OFF"}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                </section>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       )}
     </section>
   );
