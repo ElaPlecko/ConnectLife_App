@@ -186,11 +186,7 @@ function ConfigBlock({ config, primary = false }) {
     return map;
   }, {});
 
-  const firstFeatureWithOverrides =
-    config.features.find((feature) => featureOverrideMap[feature.key]?.length > 0)
-      ?.key ?? "";
-
-  const [expandedFeature, setExpandedFeature] = useState(firstFeatureWithOverrides);
+  const [expandedFeature, setExpandedFeature] = useState("");
 
   return (
     <div className={`config-block${primary ? " is-primary" : ""}`}>
@@ -255,9 +251,8 @@ function getConditionValue(remoteConfigItem, selectedCountry, selectedPlatform, 
   const itemConditions = remoteConfigItem.conditions ?? [];
 
   const matchedCondition = REMOTE_CONFIG_CONDITIONS.find((condition) => {
-    const countryMatches = condition.countries?.includes(selectedCountry);
-    const platformMatches =
-      !condition.platform || condition.platform === selectedPlatform;
+  const countryMatches = condition.countries?.includes(selectedCountry);
+  const platformMatches = selectedPlatform === "all" || !condition.platform || condition.platform === selectedPlatform;
 
     return countryMatches && platformMatches;
   });
@@ -290,7 +285,7 @@ function getAvailablePlatforms() {
 }
 
 function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
-  const [open, setOpen] = useState(appliance.id === "dishwasher");
+  const [open, setOpen] = useState(false);
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -416,14 +411,12 @@ function ApplianceSection({ appliance, selectedCountry, selectedPlatform }) {
 }
 
 export default function Features() {
-  const [selectedDeviceId, setSelectedDeviceId] = useState(
-    REMOTE_CONFIG_DEVICES[0]?.id ?? ""
-  );
+  const [selectedDeviceId, setSelectedDeviceId] = useState("all");
   const countries = getAvailableCountries();
   const platforms = getAvailablePlatforms();
 
   const [selectedCountry, setSelectedCountry] = useState(countries[0] ?? "");
-  const [selectedPlatform, setSelectedPlatform] = useState(platforms[0] ?? "Android");
+  const [selectedPlatform, setSelectedPlatform] = useState("all");
 
   const selectedDevice = REMOTE_CONFIG_DEVICES.find(
     (device) => device.id === selectedDeviceId
@@ -441,16 +434,14 @@ export default function Features() {
       <div className="feature-toolbar">
         <label>
           Appliance
-          <select
-            value={selectedDeviceId}
-            onChange={(e) => setSelectedDeviceId(e.target.value)}
-          >
-            {REMOTE_CONFIG_DEVICES.map((device) => (
-              <option key={device.id} value={device.id}>
-                {device.name}
-              </option>
-            ))}
-          </select>
+          <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)}>
+          <option value="all">All appliances</option>
+          {REMOTE_CONFIG_DEVICES.map((device) => (
+            <option key={device.id} value={device.id}>
+              {device.name}
+            </option>
+          ))}
+        </select>
         </label>
 
         <label>
@@ -469,16 +460,15 @@ export default function Features() {
 
         <label>
           Platform
-          <select
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value)}
-          >
-            {platforms.map((platform) => (
-              <option key={platform} value={platform}>
-                {platform}
-              </option>
-            ))}
-          </select>
+          <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)}>
+          <option value="all">All platforms</option>
+
+          {platforms.map((platform) => (
+            <option key={platform} value={platform}>
+              {platform}
+            </option>
+          ))}
+        </select>
         </label>
 
         <button
@@ -492,13 +482,22 @@ export default function Features() {
 
       <div className="feature-shell">
         <div className="appliance-stack">
-          {selectedDevice && (
-            <ApplianceSection
-              appliance={selectedDevice}
-              selectedCountry={selectedCountry}
-              selectedPlatform={selectedPlatform}
-            />
-          )}
+          {selectedDeviceId === "all"
+            ? REMOTE_CONFIG_DEVICES.map((device) => (
+                <ApplianceSection
+                  key={device.id}
+                  appliance={device}
+                  selectedCountry={selectedCountry}
+                  selectedPlatform={selectedPlatform}
+                />
+              ))
+            : selectedDevice && (
+                <ApplianceSection
+                  appliance={selectedDevice}
+                  selectedCountry={selectedCountry}
+                  selectedPlatform={selectedPlatform}
+                />
+              )}
         </div>
       </div>
     </section>

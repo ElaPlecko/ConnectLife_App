@@ -37,7 +37,7 @@ export function Markets({ currentUserRole, isDark }) {
           {error && <div className="feature-error">{error}</div>}
           {!loading && !error && (
             <Table
-              headers={["Condition", "Countries", "Platform", "Status", ""]}
+              headers={["Condition", "Countries", "Platform", "", ""]}
               rows={rows}
             />
           )}
