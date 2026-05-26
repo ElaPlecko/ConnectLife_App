@@ -32,7 +32,7 @@ export default function GlobeView({ isDark, width = 600, height = 600 }) {
         pointsData={marketLocations}
         pointLat="lat"
         pointLng="lng"
-        pointColor={() => isDark ? "#64c8ff" : "#ffffff"}
+        pointColor={() => isDark ? "#64c8ff" : "#730039"}
         pointRadius={0.35}
         pointAltitude={0.02}
       />

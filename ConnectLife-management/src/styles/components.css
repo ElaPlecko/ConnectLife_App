@@ -318,14 +318,17 @@ tr:last-child td {
 .invite-modal {
   width: 420px;
 
-  background: white;
+  background: var(--surface);
+
+  color: var(--ink);
+
+  border: 1px solid var(--line);
 
   border-radius: 24px;
 
   padding: 28px;
 
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow);
 
   animation: modalPop 0.2s ease;
 }
@@ -335,8 +338,7 @@ tr:last-child td {
 }
 
 .invite-modal p {
-  color: #666;
-
+  color: var(--muted);
   margin-bottom: 20px;
 }
 
@@ -347,7 +349,11 @@ tr:last-child td {
 
   border-radius: 14px;
 
-  border: 1px solid #ddd;
+  background: var(--input-bg);
+
+  color: var(--ink);
+
+  border: 1px solid var(--input-border);
 
   margin-bottom: 20px;
 
@@ -366,6 +372,10 @@ tr:last-child td {
   justify-content: flex-end;
 
   gap: 12px;
+}
+
+.invite-modal input::placeholder {
+  color: var(--muted);
 }
 
 @keyframes modalPop {

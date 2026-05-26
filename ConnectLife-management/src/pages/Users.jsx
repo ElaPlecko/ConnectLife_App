@@ -1,140 +1,146 @@
-import { useState } from "react";
-import { AUTH_USERS } from "../config/authUsers.js";
+import { useState, useEffect } from "react";
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import emailjs from "@emailjs/browser";
 import { Table } from "../utils/helpers.jsx";
 import toast from "react-hot-toast";
+
+const EMAILJS_SERVICE_ID = "service_185kg2d";
+const EMAILJS_TEMPLATE_ID = "template_hqwvatk";
+const EMAILJS_PUBLIC_KEY = "LQKk6-F2C6OmP49YF";
 
 function SimplePanel({ title, action, children }) {
   return (
     <section className="panel page-panel">
       <div className="panel-header">
         <h2>{title}</h2>
-
         {action}
       </div>
-
       {children}
     </section>
   );
 }
 
 export function Users({ currentUserRole }) {
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [showInviteModal, setShowInviteModal] =
-    useState(false);
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-  const [inviteEmail, setInviteEmail] =
-    useState("");
+  async function loadUsers() {
+    try {
+      setLoading(true);
+      const snapshot = await getDocs(collection(db, "users"));
+      const loaded = snapshot.docs.map((document) => ({
+        id: document.id,
+        ...document.data(),
+      }));
+      setUsers(loaded);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not load users.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const [users, setUsers] = useState(
-    AUTH_USERS.map((user, index) => ({
-      id: index,
+  const handleToggleStatus = async (id) => {
+    const user = users.find((u) => u.id === id);
+    if (!user) return;
 
-      email: user.email,
+    const newStatus = user.status === "Active" ? "Draft" : "Active";
 
-      provider: user.provider,
-
-      role:
-        user.provider === "google"
-          ? "admin"
-          : "viewer",
-
-      status: user.status || "Active",
-    }))
-  );
-
-  const handleToggleStatus = (id) => {
-
-    setUsers((prev) =>
-      prev.map((user) => {
-
-        if (user.id !== id) {
-          return user;
-        }
-
-        return {
-          ...user,
-
-          status:
-            user.status === "Active"
-              ? "Draft"
-              : "Active",
-        };
-      })
-    );
+    try {
+      await updateDoc(doc(db, "users", id), { status: newStatus });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, status: newStatus } : u))
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not update user status.");
+    }
   };
 
-  const handleInviteUser = () => {
-
-    if (!inviteEmail) {
-      return;
+  const handleDeleteUser = async (id) => {
+    try {
+      await deleteDoc(doc(db, "users", id));
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      toast.success("User deleted.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not delete user.");
     }
+  };
 
-    const newUser = {
-      id: Date.now(),
+  const handleInviteUser = async () => {
+    if (!inviteEmail) return;
 
-      email: inviteEmail,
+    try {
+      const newDoc = await addDoc(collection(db, "users"), {
+        email: inviteEmail,
+        provider: "password",
+        status: "Active",
+      });
 
-      provider: "password",
+      setUsers((prev) => [
+        ...prev,
+        { id: newDoc.id, email: inviteEmail, provider: "password", status: "Active" },
+      ]);
 
-      role: "viewer",
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        { to_email: inviteEmail },
+        EMAILJS_PUBLIC_KEY
+      );
 
-      status: "Active",
-    };
-
-    setUsers((prev) => [...prev, newUser]);
-
-    toast.success("Invite sent", {
-      duration: 3000,
-    });
-
-    window.location.href = `
-      mailto:${inviteEmail}
-      ?subject=ConnectLife Admin Dashboard Access
-    `;
-
-    setInviteEmail("");
-
-    setShowInviteModal(false);
+      toast.success("User invited and email sent!");
+      setInviteEmail("");
+      setShowInviteModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong.");
+    }
   };
 
   const rows = users.map((user) => (
     <tr key={user.id}>
-
       <td>{user.email}</td>
-
       <td>
         <span className="badge">
-          {user.role}
+          {user.provider === "google" ? "admin" : "viewer"}
         </span>
       </td>
-
       <td>
-        <span
-          className={`badge ${user.status.toLowerCase()}`}
-        >
+        <span className={`badge ${user.status?.toLowerCase()}`}>
           {user.status}
         </span>
       </td>
-
       <td>
-
-        {currentUserRole === "admin" &&
-          user.role === "viewer" && (
-            <button
-              className="text-link"
-              type="button"
-              onClick={() =>
-                handleToggleStatus(user.id)
-              }
-            >
-              {user.status === "Active"
-                ? "Disable"
-                : "Enable"}
-            </button>
-          )}
-
+        {currentUserRole === "admin" && user.provider !== "google" && (
+          <button
+            className="text-link"
+            type="button"
+            onClick={() => handleToggleStatus(user.id)}
+          >
+            {user.status === "Active" ? "Disable" : "Enable"}
+          </button>
+        )}
+        {currentUserRole === "admin" && (
+          <button
+            className="text-link"
+            type="button"
+            onClick={() => handleDeleteUser(user.id)}
+            style={{ marginLeft: "8px", color: "red" }}
+          >
+            Delete
+          </button>
+        )}
       </td>
-
     </tr>
   ));
 
@@ -147,65 +153,45 @@ export function Users({ currentUserRole }) {
             <button
               className="primary-button"
               type="button"
-              onClick={() =>
-                setShowInviteModal(true)
-              }
+              onClick={() => setShowInviteModal(true)}
             >
               Invite User
             </button>
           )
         }
       >
-        <Table
-          headers={[
-            "User",
-            "Role",
-            "Status",
-            "Actions",
-          ]}
-          rows={rows}
-          minWidth={680}
-        />
+        {loading ? (
+          <p>Loading users...</p>
+        ) : (
+          <Table
+            headers={["User", "Role", "Status", "Actions"]}
+            rows={rows}
+            minWidth={680}
+          />
+        )}
       </SimplePanel>
 
       {showInviteModal && (
         <div className="invite-modal-overlay">
-
           <div className="invite-modal">
-
             <h2>Invite User</h2>
-
-            <p>
-              Send dashboard access invitation
-            </p>
-
+            <p>Send dashboard access invitation</p>
             <input
               type="email"
               placeholder="Enter user email..."
               value={inviteEmail}
-              onChange={(e) =>
-                setInviteEmail(e.target.value)
-              }
+              onChange={(e) => setInviteEmail(e.target.value)}
             />
-
             <div className="invite-modal-actions">
-
               <button
                 className="secondary-button"
-                onClick={() =>
-                  setShowInviteModal(false)
-                }
+                onClick={() => setShowInviteModal(false)}
               >
                 Cancel
               </button>
-
-              <button
-                className="primary-button"
-                onClick={handleInviteUser}
-              >
+              <button className="primary-button" onClick={handleInviteUser}>
                 Send Invite
               </button>
-
             </div>
           </div>
         </div>
