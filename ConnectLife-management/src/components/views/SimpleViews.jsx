@@ -1,7 +1,8 @@
 import { contentTypes, users, activities } from "../../data/data.js";
 import { flagIcon, Table } from "../../utils/helpers.jsx";
-import { useState } from "react";
+//import { useState } from "react";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
+import { useState, useEffect } from "react";
 
 function getMarketsFromRemoteConfig() {
   const countries = REMOTE_CONFIG_CONDITIONS.flatMap(
@@ -115,17 +116,54 @@ export function Links() {
 }*/
 
 export function AuditLog() {
-  const rows = activities.map(([action, entity, market, time], i) => (
-    <tr key={i}>
-      <td>{action}</td>
-      <td>{entity}</td>
-      <td>{market}</td>
-      <td>{time}</td>
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLogs() {
+      try {
+        const { collection, getDocs, orderBy, query } = await import("firebase/firestore");
+        const { db } = await import("../../firebase");
+        const q = query(collection(db, "auditLogs"), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+        const loaded = snapshot.docs.map((document) => ({
+          id: document.id,
+          ...document.data(),
+        }));
+        setLogs(loaded);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadLogs();
+  }, []);
+
+  const rows = logs.map((log) => (
+    <tr key={log.id}>
+      <td>{log.userEmail}</td>
+      <td>{log.action}</td>
+      <td>{log.details}</td>
+      <td>
+        {log.timestamp?.toDate
+          ? log.timestamp.toDate().toLocaleString()
+          : "—"}
+      </td>
     </tr>
   ));
+
   return (
     <SimplePanel title="Audit Log">
-      <Table headers={["Action", "Entity", "Market", "Time"]} rows={rows} minWidth={680} />
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <Table
+          headers={["User", "Action", "Details", "Time"]}
+          rows={rows}
+          minWidth={680}
+        />
+      )}
     </SimplePanel>
   );
 }

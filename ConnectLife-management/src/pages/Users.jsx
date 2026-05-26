@@ -131,41 +131,47 @@ export function Users({ currentUserRole }) {
   };
 
   const rows = users.map((user) => (
-    <tr key={user.id}>
-      <td>{user.email}</td>
-      <td>
-        <span className="badge">
-          {user.provider === "google" ? "admin" : "viewer"}
-        </span>
-      </td>
-      <td>
-        <span className={`badge ${user.status?.toLowerCase()}`}>
-          {user.status}
-        </span>
-      </td>
-      <td>
-        {currentUserRole === "admin" && user.provider !== "google" && (
-          <button
-            className="text-link"
-            type="button"
-            onClick={() => handleToggleStatus(user.id)}
-          >
-            {user.status === "Active" ? "Disable" : "Enable"}
-          </button>
-        )}
-        {currentUserRole === "admin" && (
-          <button
-            className="text-link"
-            type="button"
-            onClick={() => handleDeleteUser(user.id)}
-            style={{ marginLeft: "8px", color: "red" }}
-          >
-            Delete
-          </button>
-        )}
-      </td>
-    </tr>
-  ));
+  <tr key={user.id}>
+    <td>{user.email}</td>
+
+    <td>
+      <span className="badge">
+        {user.provider === "google" ? "admin" : "viewer"}
+      </span>
+    </td>
+
+    <td>
+      <span className={`badge ${user.status?.toLowerCase()}`}>
+        {user.status}
+      </span>
+    </td>
+
+    <td>
+      {currentUserRole === "admin" && user.provider !== "google" && (
+        <button
+          className="text-link"
+          type="button"
+          onClick={() => handleToggleStatus(user.id)}
+        >
+          {user.status === "Active" ? "Disable" : "Enable"}
+        </button>
+      )}
+    </td>
+
+    <td>
+      {currentUserRole === "admin" && (
+        <button
+          className="text-link"
+          type="button"
+          onClick={() => handleDeleteUser(user.id)}
+          style={{ color: "red" }}
+        >
+          Delete
+        </button>
+      )}
+    </td>
+  </tr>
+));
 
   return (
     <>
@@ -187,9 +193,9 @@ export function Users({ currentUserRole }) {
           <p>Loading users...</p>
         ) : (
           <Table
-            headers={["User", "Role", "Status", "Actions"]}
+            headers={["User", "Role", "Status", "Actions", "Delete"]}
             rows={rows}
-            minWidth={680}
+            minWidth={800}
           />
         )}
       </SimplePanel>
