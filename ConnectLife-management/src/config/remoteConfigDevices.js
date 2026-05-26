@@ -1,6 +1,9 @@
+import { Icon } from "@iconify/react";
+
 export const REMOTE_CONFIG_DEVICES = [
   {
     id: "oven",
+    icon: "hugeicons:oven",
     name: "Oven",
     category: "Cooking and Baking",
     remoteKeys: [
@@ -19,6 +22,7 @@ export const REMOTE_CONFIG_DEVICES = [
   },
   {
     id: "hood",
+    icon: "material-symbols-light:range-hood-outline",
     name: "Hood",
     category: "Cooking and Baking",
     remoteKeys: [
@@ -37,6 +41,7 @@ export const REMOTE_CONFIG_DEVICES = [
   },
   {
     id: "dishwasher",
+    icon: "iconoir:dishwasher",
     name: "Dishwasher",
     category: "Dishwashing",
     remoteKeys: [
@@ -55,6 +60,7 @@ export const REMOTE_CONFIG_DEVICES = [
   },
   {
     id: "refrigerator",
+    icon: "hugeicons:refrigerator",
     name: "Refrigerator",
     category: "Cooling and Freezing",
     remoteKeys: [
@@ -92,6 +98,7 @@ export const REMOTE_CONFIG_DEVICES = [
   },
   {
     id: "hob-hih",
+    icon: "hugeicons:gas-stove",
     name: "Hob/hih",
     category: "Cooking and Baking",
     remoteKeys: [
@@ -111,6 +118,7 @@ export const REMOTE_CONFIG_DEVICES = [
   },
   {
     id: "air-conditioner",
+    icon: "iconoir:air-conditioner",
     name: "Air Conditioner",
     category: "Home heating and cooling",
     remoteKeys: [
@@ -162,6 +170,7 @@ export const REMOTE_CONFIG_DEVICES = [
     },
     {
   id: "washerDryer",
+  icon: "icon-park-twotone:washing-machine",
   name: "Washer-Dryer",
   category: "Washing and Drying",
   specialParser: "washerDryer",

@@ -5,6 +5,7 @@ import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
+import { Icon } from "@iconify/react";
 
 function formatFeatureName(key) {
   return key
@@ -386,9 +387,16 @@ function ApplianceSection({ appliance, selectedMarket }) {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <div>
-          <h3>{appliance.name}</h3>
-          <p>{appliance.category}</p>
+        <div className="appliance-title">
+           <Icon
+              className="appliance-inline-icon"
+              icon={appliance.icon}
+            />
+
+          <div>
+            <h3>{appliance.name}</h3>
+            <p>{appliance.category}</p>
+          </div>
         </div>
 
         <span className="market-chip appliance-status">

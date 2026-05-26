@@ -346,3 +346,21 @@
     margin-left: 0;
   }
 }
+
+.appliance-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.appliance-inline-icon {
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+
+  color: var(--hisense);
+
+  opacity: 0.95;
+}
