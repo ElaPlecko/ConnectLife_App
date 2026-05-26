@@ -4,6 +4,8 @@ import { db } from "../firebase";
 import emailjs from "@emailjs/browser";
 import { Table } from "../utils/helpers.jsx";
 import toast from "react-hot-toast";
+import { auth } from "../firebase";
+import { logAction } from "../utils/auditLog";
 
 const EMAILJS_SERVICE_ID = "service_185kg2d";
 const EMAILJS_TEMPLATE_ID = "template_hqwvatk";
@@ -26,6 +28,8 @@ export function Users({ currentUserRole }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const currentUserEmail = auth.currentUser?.email ?? "unknown";
 
   useEffect(() => {
     loadUsers();
@@ -59,6 +63,11 @@ export function Users({ currentUserRole }) {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, status: newStatus } : u))
       );
+      await logAction({
+        userEmail: currentUserEmail,
+        action: newStatus === "Active" ? "Enabled user" : "Disabled user",
+        details: user.email,
+      });
     } catch (err) {
       console.error(err);
       toast.error("Could not update user status.");
@@ -66,10 +75,18 @@ export function Users({ currentUserRole }) {
   };
 
   const handleDeleteUser = async (id) => {
+    const user = users.find((u) => u.id === id);
+    if (!user) return;
+
     try {
       await deleteDoc(doc(db, "users", id));
       setUsers((prev) => prev.filter((u) => u.id !== id));
       toast.success("User deleted.");
+      await logAction({
+        userEmail: currentUserEmail,
+        action: "Deleted user",
+        details: user.email,
+      });
     } catch (err) {
       console.error(err);
       toast.error("Could not delete user.");
@@ -97,6 +114,12 @@ export function Users({ currentUserRole }) {
         { to_email: inviteEmail },
         EMAILJS_PUBLIC_KEY
       );
+
+      await logAction({
+        userEmail: currentUserEmail,
+        action: "Invited user",
+        details: inviteEmail,
+      });
 
       toast.success("User invited and email sent!");
       setInviteEmail("");
