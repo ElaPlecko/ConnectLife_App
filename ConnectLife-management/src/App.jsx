@@ -35,62 +35,60 @@ function Portal() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-
     localStorage.setItem("theme", theme);
   }, [theme]);
 
   const [brandColor, setBrandColor] = useState("#009A9D");
+  const [currentView, setCurrentView] = useState("dashboard");
 
-  const [currentView, setCurrentView] =
-    useState("dashboard");
+  // ↓ SPREMEMBA: shrani izbrani market za Features page
+  const [featuresMarket, setFeaturesMarket] = useState("Default value");
 
   const navigate = useNavigate();
 
   const currentUser = auth.currentUser;
 
   const currentUserRole =
-    currentUser?.providerData?.[0]?.providerId ===
-    "google.com"
+    currentUser?.providerData?.[0]?.providerId === "google.com"
       ? "admin"
       : "viewer";
 
-  const handleNavigate = (view) => {
+  // ↓ SPREMEMBA: handleNavigate sprejme opcijski market parameter
+  const handleNavigate = (view, market) => {
     if (view === "login") {
       navigate("/");
-
       return;
+    }
+
+    if (view === "features" && market) {
+      setFeaturesMarket(market);
+    } else {
+      setFeaturesMarket("Default value");
     }
 
     setCurrentView(view);
   };
 
   const views = {
-    dashboard: (
-      <Dashboard
+    dashboard: <Dashboard onNavigate={handleNavigate} />,
+
+    // ↓ SPREMEMBA: Markets dobi onNavigate
+    markets: (
+      <Markets
+        currentUserRole={currentUserRole}
+        isDark={theme === "dark"}
         onNavigate={handleNavigate}
       />
     ),
 
-    markets: (
-      <Markets
-        currentUserRole={currentUserRole} isDark={theme === "dark"} 
-      />
-    ),
-
-    features: <Features />,
+    // ↓ SPREMEMBA: Features dobi initialMarket
+    features: <Features initialMarket={featuresMarket} />,
 
     content: <Content />,
-
-
     links: <Links />,
-
     comparison: <Comparison />,
 
-    users: (
-      <Users
-        currentUserRole={currentUserRole}
-      />
-    ),
+    users: <Users currentUserRole={currentUserRole} />,
 
     audit: <AuditLog />,
   };
@@ -133,8 +131,6 @@ function Portal() {
 export default function App() {
   return (
     <BrowserRouter>
-
-      {/* SWEET TOAST ALERTS ✨ */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -143,38 +139,21 @@ export default function App() {
             color: "#fff",
             borderRadius: "14px",
             padding: "16px",
-            boxShadow:
-              "0 10px 25px rgba(0,0,0,0.2)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
           },
-
           success: {
-            iconTheme: {
-              primary: "#10b981",
-              secondary: "#fff",
-            },
+            iconTheme: { primary: "#10b981", secondary: "#fff" },
           },
-
           error: {
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: "#fff",
-            },
+            iconTheme: { primary: "#ef4444", secondary: "#fff" },
           },
         }}
       />
 
       <Routes>
         <Route path="/" element={<Login />} />
-
-        <Route
-          path="/dashboard"
-          element={<Portal />}
-        />
-
-        <Route
-          path="*"
-          element={<Navigate to="/" />}
-        />
+        <Route path="/dashboard" element={<Portal />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

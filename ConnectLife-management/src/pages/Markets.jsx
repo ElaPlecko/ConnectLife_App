@@ -30,7 +30,8 @@ function MarketsSkeleton() {
   );
 }
 
-export function Markets({ currentUserRole, isDark }) {
+// ↓ SPREMEMBA: dobi onNavigate prop
+export function Markets({ currentUserRole, isDark, onNavigate }) {
   const { conditions, loading, error } = useRemoteConfigConditions();
 
   const rows = conditions.map((condition) => (
@@ -38,21 +39,28 @@ export function Markets({ currentUserRole, isDark }) {
       <td><strong>{condition.label}</strong></td>
       <td>{condition.countries?.join(", ")}</td>
       <td>{condition.platform || "All"}</td>
-      <td><span className="badge active">Active</span></td>
-      <td className="more">...</td>
+      <td>
+        <button
+          className="text-link"
+          type="button"
+          onClick={() => onNavigate("features", condition.label)}
+        >
+          View features →
+        </button>
+      </td>
     </tr>
   ));
 
   return (
     <SimplePanel title="Markets">
       <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-        
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading && <MarketsSkeleton />}
           {error && <div className="feature-error">{error}</div>}
           {!loading && !error && (
             <Table
-              headers={["Condition", "Countries", "Platform", "", ""]}
+              // ↓ SPREMEMBA: dodan header za novi stolpec
+              headers={["Condition", "Countries", "Platform", ""]}
               rows={rows}
             />
           )}
@@ -61,7 +69,6 @@ export function Markets({ currentUserRole, isDark }) {
         <div style={{ flexShrink: 0 }}>
           <GlobeView isDark={isDark} width={320} height={320} />
         </div>
-
       </div>
     </SimplePanel>
   );

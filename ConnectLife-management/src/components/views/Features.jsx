@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { fetchAndActivate, getValue } from "firebase/remote-config";
 import { exportFeaturesToExcel } from "../../utils/exportFeaturesToExcel";
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
-import { Icon } from "@iconify/react";
 
 function formatFeatureName(key) {
   return key
@@ -26,18 +24,16 @@ function buildConfigData(parsedConfig, configKey) {
     return {
       features: [],
       restrictions: [],
-      modelOverrides: Object.entries(models).map(
-        ([model, enabled]) => ({
-          model,
-          overrides: [
-            {
-              key: configKey,
-              name: formatFeatureName(configKey),
-              enabled: Boolean(enabled),
-            },
-          ],
-        })
-      ),
+      modelOverrides: Object.entries(models).map(([model, enabled]) => ({
+        model,
+        overrides: [
+          {
+            key: configKey,
+            name: formatFeatureName(configKey),
+            enabled: Boolean(enabled),
+          },
+        ],
+      })),
     };
   }
 
@@ -100,11 +96,7 @@ function buildConfigData(parsedConfig, configKey) {
         })),
     }));
 
-  return {
-    features,
-    restrictions,
-    modelOverrides,
-  };
+  return { features, restrictions, modelOverrides };
 }
 
 function ToggleButton({ enabled }) {
@@ -117,17 +109,6 @@ function ToggleButton({ enabled }) {
       <span />
       <em>{enabled ? "ON" : "OFF"}</em>
     </button>
-  );
-}
-
-function FeatureSkeleton() {
-  return (
-    <div className="skeleton-config">
-      <div className="skeleton-line skeleton-title" />
-      <div className="skeleton-row" />
-      <div className="skeleton-row" />
-      <div className="skeleton-row" />
-    </div>
   );
 }
 
@@ -156,47 +137,26 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
           }${expanded ? " is-open" : ""}`}
           type="button"
           onClick={onToggle}
-          aria-label={
-            expanded ? "Collapse model overrides" : "Expand model overrides"
-          }
+          aria-label={expanded ? "Collapse model overrides" : "Expand model overrides"}
         >
           <span aria-hidden="true" />
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {hasOverrides && expanded && (
-          <motion.div
-            className="model-panel"
-            initial={{ height: 0, opacity: 0, y: -6 }}
-            animate={{ height: "auto", opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            <strong className="model-panel-title">Model overrides</strong>
+      {hasOverrides && expanded && (
+        <div className="model-panel">
+          <strong className="model-panel-title">Model overrides</strong>
 
-            <div className="model-list">
-              {overrides.map((item, index) => (
-                <motion.div
-                  className="model-override"
-                  key={`${item.model}-${feature.key}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: 0.18,
-                    delay: index * 0.035,
-                    ease: "easeOut",
-                  }}
-                >
-                  <span className="model-name">{item.model}</span>
-                  <ToggleButton enabled={item.enabled} />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <div className="model-list">
+            {overrides.map((item) => (
+              <div className="model-override" key={`${item.model}-${feature.key}`}>
+                <span className="model-name">{item.model}</span>
+                <ToggleButton enabled={item.enabled} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -215,13 +175,9 @@ function ConfigBlock({ config, primary = false }) {
         const override = item.overrides.find(
           (candidate) => candidate.key === feature.key
         );
-
-        return override
-          ? { model: item.model, enabled: override.enabled }
-          : null;
+        return override ? { model: item.model, enabled: override.enabled } : null;
       })
       .filter(Boolean);
-
     return map;
   }, {});
 
@@ -229,9 +185,7 @@ function ConfigBlock({ config, primary = false }) {
 
   return (
     <div className={`config-block${primary ? " is-primary" : ""}`}>
-      <div
-        className={`config-heading${showFeatureList ? "" : " is-standalone"}`}
-      >
+      <div className={`config-heading${showFeatureList ? "" : " is-standalone"}`}>
         <div>
           <h4>{config.label}</h4>
         </div>
@@ -239,9 +193,7 @@ function ConfigBlock({ config, primary = false }) {
         <ToggleButton
           enabled={
             config.features.some((f) => f.enabled) ||
-            config.modelOverrides?.some((m) =>
-              m.overrides.some((o) => o.enabled)
-            )
+            config.modelOverrides?.some((m) => m.overrides.some((o) => o.enabled))
           }
         />
       </div>
@@ -272,16 +224,12 @@ function ConfigBlock({ config, primary = false }) {
       {config.restrictions?.length > 0 && (
         <div className="restriction-box">
           <strong>Restrictions</strong>
-
           {config.restrictions.map((restriction) => (
             <div className="restriction-group" key={restriction.key}>
               <span className="hint">{restriction.name}</span>
-
               <div className="chip-list">
                 {restriction.values.map((value) => (
-                  <span className="market-chip" key={value}>
-                    {value}
-                  </span>
+                  <span className="market-chip" key={value}>{value}</span>
                 ))}
               </div>
             </div>
@@ -292,9 +240,8 @@ function ConfigBlock({ config, primary = false }) {
   );
 }
 
-// ↓ SPREMEMBA 1: Ko je selectedMarket "Default value", vrni kar defaultValue
 function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
-  if (selectedMarket === "Default") return defaultValue;
+  if (selectedMarket === "Default value") return defaultValue;
 
   const itemConditions = remoteConfigItem.conditions ?? [];
 
@@ -378,7 +325,6 @@ function ApplianceSection({ appliance, selectedMarket }) {
             if (!rawValue) continue;
 
             const parsedConfig = JSON.parse(rawValue);
-
             const data = buildConfigData(parsedConfig, remoteConfigItem.configKey);
 
             loadedConfigs.push({
@@ -415,16 +361,9 @@ function ApplianceSection({ appliance, selectedMarket }) {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <div className="appliance-title">
-           <Icon
-              className="appliance-inline-icon"
-              icon={appliance.icon}
-            />
-
-          <div>
-            <h3>{appliance.name}</h3>
-            <p>{appliance.category}</p>
-          </div>
+        <div>
+          <h3>{appliance.name}</h3>
+          <p>{appliance.category}</p>
         </div>
 
         <span className="market-chip appliance-status">
@@ -437,41 +376,37 @@ function ApplianceSection({ appliance, selectedMarket }) {
         />
       </button>
 
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            className="appliance-body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            {loading && <FeatureSkeleton />}
+      {open && (
+        <div className="appliance-body">
+          {error && <div className="feature-error">{error}</div>}
 
-            {error && <div className="feature-error">{error}</div>}
-
-            {!loading && !error && configs.map((config, index) => (
-                <ConfigBlock
-                  key={config.key}
-                  config={config}
-                  primary={index === 0 && config.key === primaryKey}
-                />
-              ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {!error &&
+            configs.map((config, index) => (
+              <ConfigBlock
+                key={config.key}
+                config={config}
+                primary={index === 0 && config.key === primaryKey}
+              />
+            ))}
+        </div>
+      )}
     </section>
   );
 }
 
-export default function Features() {
+// ↓ SPREMEMBA: sprejme initialMarket prop
+export default function Features({ initialMarket = "Default value" }) {
   const [selectedDeviceId, setSelectedDeviceId] = useState("all");
-
   const markets = getAvailableMarkets();
 
-  // ↓ SPREMEMBA 2: "Default value" je privzeto izbran
-  const [selectedMarket, setSelectedMarket] = useState("Default");
+  // ↓ SPREMEMBA: initialMarket nastavi privzeti market
+  const [selectedMarket, setSelectedMarket] = useState(initialMarket);
+
+  // ↓ SPREMEMBA: ko prideš iz Markets page, posodobi market in resetiraj na all appliances
+  useEffect(() => {
+    setSelectedMarket(initialMarket);
+    setSelectedDeviceId("all");
+  }, [initialMarket]);
 
   const selectedDevice = REMOTE_CONFIG_DEVICES.find(
     (device) => device.id === selectedDeviceId
@@ -502,12 +437,11 @@ export default function Features() {
 
         <label>
           Market
-          {/* ↓ SPREMEMBA 3: "Default value" kot prva opcija v dropdownu */}
           <select
             value={selectedMarket}
             onChange={(e) => setSelectedMarket(e.target.value)}
           >
-            <option value="Default">Default</option>
+            <option value="Default value">Default value</option>
 
             {markets.map((market) => (
               <option key={market} value={market}>
@@ -527,31 +461,22 @@ export default function Features() {
       </div>
 
       <div className="feature-shell">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${selectedDeviceId}-${selectedMarket}`}
-            className="appliance-stack"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          >
-            {selectedDeviceId === "all"
-              ? REMOTE_CONFIG_DEVICES.map((device) => (
-                  <ApplianceSection
-                    key={device.id}
-                    appliance={device}
-                    selectedMarket={selectedMarket}
-                  />
-                ))
-              : selectedDevice && (
-                  <ApplianceSection
-                    appliance={selectedDevice}
-                    selectedMarket={selectedMarket}
-                  />
-                )}
-          </motion.div>
-        </AnimatePresence>
+        <div className="appliance-stack">
+          {selectedDeviceId === "all"
+            ? REMOTE_CONFIG_DEVICES.map((device) => (
+                <ApplianceSection
+                  key={device.id}
+                  appliance={device}
+                  selectedMarket={selectedMarket}
+                />
+              ))
+            : selectedDevice && (
+                <ApplianceSection
+                  appliance={selectedDevice}
+                  selectedMarket={selectedMarket}
+                />
+              )}
+        </div>
       </div>
     </section>
   );
