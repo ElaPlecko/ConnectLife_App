@@ -181,10 +181,10 @@ function EventsTable({ data }) {
   return (
     <div style={styles.tableCard}>
       <div style={styles.tableHeader}>
-        <span style={styles.chartTitle}>Vsi eventi</span>
+        <span style={styles.chartTitle}>All events</span>
         <input
           style={styles.searchInput}
-          placeholder="Išči event..."
+          placeholder="Search event..."
           value={query}
           onChange={(e) => { setQuery(e.target.value); setPage(0); }}
         />
@@ -221,9 +221,9 @@ function EventsTable({ data }) {
         </table>
       </div>
       <div style={styles.pageRow}>
-        <button style={styles.pageBtn} onClick={() => setPage((p) => p - 1)} disabled={page === 0}>← Nazaj</button>
-        <span style={{ fontSize: 12, color: "#888" }}>Stran {page + 1} / {totalPages} ({filtered.length} eventov)</span>
-        <button style={styles.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages - 1}>Naprej →</button>
+        <button style={styles.pageBtn} onClick={() => setPage((p) => p - 1)} disabled={page === 0}>← Back</button>
+        <span style={{ fontSize: 12, color: cv.textSecondary }}>Page {page + 1} / {totalPages} ({filtered.length} events)</span>
+        <button style={styles.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages - 1}>Next →</button>
       </div>
     </div>
   );
@@ -255,25 +255,25 @@ export default function EventsDashboard() {
     <div style={styles.dash}>
       <ApiBar status={status} onRefetch={load} />
 
-      {status === "loading" && <div style={styles.loading}>Nalagam podatke...</div>}
-      {status === "error" && <div style={styles.loading}>Napaka pri nalaganju. Poskusi znova.</div>}
+      {status === "loading" && <div style={styles.loading}>Loading data...</div>}
+      {status === "error" && <div style={styles.loading}>Error loading data. Please try again.</div>}
 
       {status === "ok" && data.length > 0 && (
         <>
           <div style={styles.metrics}>
-            <MetricCard label="Število eventov" value={data.length} sub="tipov" />
-            <MetricCard label="Skupni event count" value={fmt(totalCount)} sub="vsi triggeri" />
-            <MetricCard label="Max unique users" value={fmt(maxUsers)} sub="na event" />
-            <MetricCard label="Avg per active user" value={avgPer.toFixed(1)} sub="povprečje" />
+            <MetricCard label="Total event types" value={data.length} sub="distinct events" />
+            <MetricCard label="Total event count" value={fmt(totalCount)} sub="all triggers combined" />
+            <MetricCard label="Max unique users" value={fmt(maxUsers)} sub="per event" />
+            <MetricCard label="Avg per active user" value={avgPer.toFixed(1)} sub="average engagement" />
           </div>
 
           <div style={styles.chartsRow}>
             <div style={styles.chartCard}>
-              <div style={styles.chartTitle}>Top 10 eventi po event count</div>
+              <div style={styles.chartTitle}>Top 10 events by event count</div>
               <TopBarChart data={data} />
             </div>
             <div style={styles.chartCard}>
-              <div style={styles.chartTitle}>Kategorije eventov</div>
+              <div style={styles.chartTitle}>Event categories</div>
               <CategoryDoughnut data={data} />
             </div>
           </div>
