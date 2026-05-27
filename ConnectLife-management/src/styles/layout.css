@@ -302,3 +302,69 @@
     gap: 10px;
   }
 }
+
+.users-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.users-skeleton-row {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 0.8fr 0.7fr;
+  gap: 16px;
+  align-items: center;
+
+  min-height: 58px;
+
+  padding: 14px 16px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: var(--surface);
+}
+
+.users-skeleton-line {
+  position: relative;
+  overflow: hidden;
+
+  height: 14px;
+
+  border-radius: 999px;
+
+  background: var(--surface-soft);
+}
+
+.users-skeleton-line::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  transform: translateX(-100%);
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 154, 157, 0.14),
+    transparent
+  );
+
+  animation: skeleton-shimmer 1.25s infinite;
+}
+
+.users-email {
+  width: 80%;
+}
+
+.users-role {
+  width: 65%;
+}
+
+.users-status {
+  width: 58%;
+}
+
+.users-actions {
+  width: 70%;
+}

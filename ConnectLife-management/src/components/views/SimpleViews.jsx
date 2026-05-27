@@ -117,6 +117,21 @@ export function Links() {
   );
 }*/
 
+function AuditSkeleton() {
+  return (
+    <div className="users-skeleton">
+      {[1, 2, 3, 4, 5, 6].map((item) => (
+        <div className="users-skeleton-row" key={item}>
+          <div className="users-skeleton-line users-email" />
+          <div className="users-skeleton-line users-role" />
+          <div className="users-skeleton-line users-status" />
+          <div className="users-skeleton-line users-actions" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AuditLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +173,7 @@ export function AuditLog() {
   return (
     <SimplePanel title="Audit Log">
       {loading ? (
-        <p>Loading...</p>
+        <AuditSkeleton />
       ) : (
         <Table
           headers={["User", "Action", "Details", "Time"]}

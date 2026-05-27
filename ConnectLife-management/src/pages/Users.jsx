@@ -6,6 +6,7 @@ import { Table } from "../utils/helpers.jsx";
 import toast from "react-hot-toast";
 import { auth } from "../firebase";
 import { logAction } from "../utils/auditLog";
+import { motion } from "framer-motion";
 
 const EMAILJS_SERVICE_ID = "service_185kg2d";
 const EMAILJS_TEMPLATE_ID = "template_hqwvatk";
@@ -22,6 +23,21 @@ function SimplePanel({ title, action, children }) {
     </section>
   );
 }
+
+function UsersSkeleton() {
+  return (
+    <div className="users-skeleton">
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div className="users-skeleton-row" key={item}>
+          <div className="users-skeleton-line users-email" />
+          <div className="users-skeleton-line users-role" />
+          <div className="users-skeleton-line users-status" />
+          <div className="users-skeleton-line users-actions" />
+        </div>
+      ))}
+    </div>
+  );
+} 
 
 export function Users({ currentUserRole }) {
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -130,8 +146,16 @@ export function Users({ currentUserRole }) {
     }
   };
 
-  const rows = users.map((user) => (
-  <tr key={user.id}>
+  const rows = users.map((user, index) => (
+  <motion.tr
+    key={user.id}
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{
+      duration: 0.22,
+      delay: index * 0.04,
+    }}
+  >
     <td>{user.email}</td>
 
     <td>
@@ -170,7 +194,7 @@ export function Users({ currentUserRole }) {
         </button>
       )}
     </td>
-  </tr>
+  </motion.tr>
 ));
 
   return (
@@ -190,7 +214,7 @@ export function Users({ currentUserRole }) {
         }
       >
         {loading ? (
-          <p>Loading users...</p>
+          <UsersSkeleton />
         ) : (
           <Table
             headers={["User", "Role", "Status", "Actions", "Delete"]}

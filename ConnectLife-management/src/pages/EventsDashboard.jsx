@@ -14,6 +14,56 @@ async function fetchEvents() {
   return MOCK_DATA;
 }
 
+function EventsSkeleton() {
+  return (
+    <div>
+      <div style={styles.metrics}>
+        {[1, 2, 3, 4].map((item) => (
+          <div style={styles.metricCard} key={item}>
+            <div style={{ ...styles.skeletonLine, width: "55%", height: 12 }} >
+              <div style={styles.skeletonShimmer} />
+            </div>
+            <div style={{ ...styles.skeletonLine, width: "38%", height: 26, marginTop: 12 }} >
+              <div style={styles.skeletonShimmer} />
+            </div>
+            <div style={{ ...styles.skeletonLine, width: "70%", height: 10, marginTop: 10 }} >
+              <div style={styles.skeletonShimmer} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={styles.chartsRow}>
+        <div style={styles.chartCard}>
+          <div style={{ ...styles.skeletonLine, width: "35%", height: 12 }} >
+            <div style={styles.skeletonShimmer} />
+          </div>
+          <div style={{ ...styles.skeletonBlock, height: 300, marginTop: 18 }} >
+            <div style={styles.skeletonShimmer} />
+          </div>
+        </div>
+
+        <div style={styles.chartCard}>
+          <div style={{ ...styles.skeletonLine, width: "45%", height: 12 }} >
+            <div style={styles.skeletonShimmer} />
+          </div>
+          <div style={{ ...styles.skeletonCircle, margin: "28px auto 0" }} >
+            <div style={styles.skeletonShimmer} />
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.tableCard}>
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div style={{ ...styles.skeletonLine, height: 34, marginBottom: 10 }} key={item} >
+            <div style={styles.skeletonShimmer} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function categorize(name) {
   if (/^(user_engagement|session_start|first_open|screen_view|app_update|app_remove|app_clear_data|app_exception|os_update|screen_view_third_party|notification|fiam)/.test(name)) return "System";
@@ -38,6 +88,28 @@ function fmt(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(0) + "K";
   return n.toLocaleString();
+}
+
+function AnimatedNumber({ value, format = (n) => n.toLocaleString(), duration = 900 }) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const target = Number(value) || 0;
+    const startTime = performance.now();
+
+    function update(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setCurrent(target * eased);
+
+      if (progress < 1) requestAnimationFrame(update);
+    }
+
+    requestAnimationFrame(update);
+  }, [value, duration]);
+
+  return format(current);
 }
 
 function VolumeTag({ count }) {
@@ -129,11 +201,13 @@ function CategoryDoughnut({ data }) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function MetricCard({ label, value, sub }) {
+function MetricCard({ label, value, sub, format }) {
   return (
     <div style={styles.metricCard}>
       <div style={styles.metricLabel}>{label}</div>
-      <div style={styles.metricValue}>{value}</div>
+      <div style={styles.metricValue}>
+        <AnimatedNumber value={value} format={format} />
+      </div>
       {sub && <div style={styles.metricSub}>{sub}</div>}
     </div>
   );
@@ -252,19 +326,29 @@ export default function EventsDashboard() {
   const avgPer = data.length ? data.reduce((s, r) => s + r.count_per_user, 0) / data.length : 0;
 
   return (
-    <div style={styles.dash}>
+    <>
+    <style>
+      {`
+        @keyframes shimmer {
+          100% {
+            transform: translateX(100%);
+          }
+        }
+      `}
+    </style>
+    <div style={styles.dash}>  
       <ApiBar status={status} onRefetch={load} />
 
-      {status === "loading" && <div style={styles.loading}>Loading data...</div>}
+      {status === "loading" && <EventsSkeleton />}
       {status === "error" && <div style={styles.loading}>Error loading data. Please try again.</div>}
 
       {status === "ok" && data.length > 0 && (
         <>
           <div style={styles.metrics}>
             <MetricCard label="Total event types" value={data.length} sub="distinct events" />
-            <MetricCard label="Total event count" value={fmt(totalCount)} sub="all triggers combined" />
-            <MetricCard label="Max unique users" value={fmt(maxUsers)} sub="per event" />
-            <MetricCard label="Avg per active user" value={avgPer.toFixed(1)} sub="average engagement" />
+            <MetricCard label="Total event count" value={totalCount} format={fmt} sub="all triggers combined" />
+            <MetricCard label="Max unique users" value={maxUsers} format={fmt} sub="per event" />
+            <MetricCard label="Avg per active user" value={avgPer} format={(n) => n.toFixed(1)} sub="average engagement" />
           </div>
 
           <div style={styles.chartsRow}>
@@ -282,6 +366,7 @@ export default function EventsDashboard() {
         </>
       )}
     </div>
+    </>
   );
 }
 
@@ -318,13 +403,17 @@ const styles = {
   th: { textAlign: "left", fontSize: 11, fontWeight: 500, color: cv.textSecondary, padding: "6px 8px", borderBottom: `0.5px solid ${cv.borderTert}`, textTransform: "uppercase", letterSpacing: "0.04em", cursor: "pointer", userSelect: "none" },
   td: { padding: "8px 8px", borderBottom: `0.5px solid ${cv.borderTert}`, color: cv.textPrimary },
   barBg: { flex: 1, height: 6, background: cv.bgSecondary, borderRadius: 3, overflow: "hidden", minWidth: 60 },
-  barFill: { height: "100%", borderRadius: 3, background: "#185FA5" },
+  barFill: { height: "100%", borderRadius: 3, background: "#185FA5",transition: "width 0.45s ease" },
   pageRow: { display: "flex", alignItems: "center", gap: 10, marginTop: 12 },
   pageBtn: { padding: "4px 10px", border: `0.5px solid ${cv.borderSec}`, borderRadius: 8, cursor: "pointer", background: cv.bgPrimary, color: cv.textPrimary, fontSize: 12 },
   tagHigh: { fontSize: 10, padding: "2px 7px", borderRadius: 20, fontWeight: 500, background: "rgba(24, 95, 165, 0.15)", color: "#5da0e8" },
   tagMed:  { fontSize: 10, padding: "2px 7px", borderRadius: 20, fontWeight: 500, background: "rgba(99, 153, 34,  0.15)", color: "#7dc043" },
   tagLow:  { fontSize: 10, padding: "2px 7px", borderRadius: 20, fontWeight: 500, background: cv.bgSecondary, color: cv.textSecondary },
   loading: { textAlign: "center", padding: "3rem", color: cv.textSecondary, fontSize: 14 },
+  skeletonLine: { position: "relative", overflow: "hidden", borderRadius: 999, background: cv.bgSecondary},
+  skeletonBlock: { position: "relative", overflow: "hidden", borderRadius: 12, background: cv.bgSecondary},
+  skeletonCircle: { position: "relative", overflow: "hidden", width: 190, height: 190, borderRadius: "50%", background: cv.bgSecondary},
+  skeletonShimmer: { position: "absolute", inset: 0, transform: "translateX(-100%)", background: "linear-gradient(90deg, transparent, rgba(0,154,157,0.14), transparent)", animation: "shimmer 1.25s infinite"},
 };
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
