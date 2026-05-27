@@ -3,6 +3,7 @@ import { flagIcon, Table } from "../../utils/helpers.jsx";
 //import { useState } from "react";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { useState, useEffect } from "react";
+import EventsDashboard from "../../pages/EventsDashboard";
 
 function getMarketsFromRemoteConfig() {
   const countries = REMOTE_CONFIG_CONDITIONS.flatMap(
@@ -60,11 +61,12 @@ export function Content() {
     </SimplePanel>
   );*/
   return (
-    <SimplePanel title="Content" action="Manage Content">
-      <p className="hint">Content configuration will be connected later.</p>
+    <SimplePanel title="Events" action="Manage Events">
+      <EventsDashboard />
     </SimplePanel>
   );
 }
+
 
 export function Links() {
   /*const linkTypes = ["FAQ", "Support", "Manuals", "Suggestions & Ideas"];
