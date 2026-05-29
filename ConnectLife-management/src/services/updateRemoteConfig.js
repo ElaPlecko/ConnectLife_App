@@ -6,14 +6,10 @@ export async function updateRemoteFeature({
   configKey,
   featureKey,
   value,
+  modelKey,
+  conditionKey,
 })
 {
-    console.log("REMOTE UPDATE REQUEST", {
-    parameterKey,
-    configKey,
-    featureKey,
-    value,
-    });
   const response = await fetch(UPDATE_REMOTE_FEATURE_URL, {
     method: "POST",
     headers: {
@@ -24,6 +20,8 @@ export async function updateRemoteFeature({
       configKey,
       featureKey,
       value,
+      modelKey,
+      conditionKey,
     }),
   });
 

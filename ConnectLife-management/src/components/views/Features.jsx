@@ -116,7 +116,7 @@ function ToggleButton({ enabled, onClick }) {
   );
 }
 
-function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle }) {
+function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle, onModelToggle }) {
   const hasOverrides = overrides.length > 0;
 
   return (
@@ -155,7 +155,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle })
             {overrides.map((item) => (
               <div className="model-override" key={`${item.model}-${feature.key}`}>
                 <span className="model-name">{item.model}</span>
-                <ToggleButton enabled={item.enabled}/>
+                <ToggleButton enabled={item.enabled}  onClick={() => onModelToggle(item, feature)}/>
               </div>
             ))}
           </div>
@@ -165,7 +165,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle })
   );
 }
 
-function ConfigBlock({ config, primary, onUpdateFeature }) {
+function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
   const showFeatureList = !(
     !primary &&
     config.features.length === 1 &&
@@ -194,6 +194,7 @@ function ConfigBlock({ config, primary, onUpdateFeature }) {
         configKey: config.configKey,
         featureKey: feature.key,
         value: newValue,
+        conditionKey: config.configKey === null && selectedMarket !== "Default value"? selectedMarket: undefined,
       });
 
       onUpdateFeature(
@@ -205,6 +206,20 @@ function ConfigBlock({ config, primary, onUpdateFeature }) {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async function handleToggleModelOverride(item, override) {
+    const newValue = !override.enabled;
+
+    await updateRemoteFeature({
+      parameterKey: config.key,
+      configKey: config.configKey,
+      featureKey: override.key,
+      modelKey: item.model,
+      value: newValue,
+    });
+
+    onUpdateFeature(config.key, override.key, newValue, item.model);
   }
 
   const [expandedFeature, setExpandedFeature] = useState("");
@@ -221,6 +236,7 @@ function ConfigBlock({ config, primary, onUpdateFeature }) {
             config.features.some((f) => f.enabled) ||
             config.modelOverrides?.some((m) => m.overrides.some((o) => o.enabled))
           }
+           onClick={() => handleToggleFeature(config.features[0])}
         />
       </div>
 
@@ -242,6 +258,7 @@ function ConfigBlock({ config, primary, onUpdateFeature }) {
                   )
                 }
                 onFeatureToggle={handleToggleFeature}
+                onModelToggle={handleToggleModelOverride}
               />
             );
           })}
@@ -329,6 +346,7 @@ function ApplianceSection({ appliance, selectedMarket }) {
             loadedConfigs.push({
               key: remoteConfigItem.key,
               label: remoteConfigItem.label,
+              configKey: null,
               features: [
                 {
                   key: remoteConfigItem.key,
@@ -382,23 +400,38 @@ function ApplianceSection({ appliance, selectedMarket }) {
 
   const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
 
-  function updateFeatureState(configKey, featureKey, value) {
+  function updateFeatureState(configKey, featureKey, value, modelKey = null) {
     setConfigs((previous) =>
-      previous.map((config) =>
-        config.key === configKey
-          ? {
-              ...config,
-              features: config.features.map((feature) =>
-                feature.key === featureKey
-                  ? {
-                      ...feature,
-                      enabled: value,
-                    }
-                  : feature
-              ),
-            }
-          : config
-      )
+      previous.map((config) => {
+        if (config.key !== configKey) return config;
+
+        if (modelKey) {
+          return {
+            ...config,
+            modelOverrides: config.modelOverrides.map((item) =>
+              item.model === modelKey
+                ? {
+                    ...item,
+                    overrides: item.overrides.map((override) =>
+                      override.key === featureKey
+                        ? { ...override, enabled: value }
+                        : override
+                    ),
+                  }
+                : item
+            ),
+          };
+        }
+
+        return {
+          ...config,
+          features: config.features.map((feature) =>
+            feature.key === featureKey
+              ? { ...feature, enabled: value }
+              : feature
+          ),
+        };
+      })
     );
   }
 
@@ -439,6 +472,7 @@ function ApplianceSection({ appliance, selectedMarket }) {
                 config={config}
                 primary={index === 0 && config.key === primaryKey}
                 onUpdateFeature={updateFeatureState}
+                selectedMarket={selectedMarket}
               />
             ))}
         </div>

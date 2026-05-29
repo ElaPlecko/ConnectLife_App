@@ -12,15 +12,11 @@ exports.updateRemoteFeatureHttp = onRequest(async (req, res) => {
       if (req.method === "OPTIONS") return res.status(204).send("");
       if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-      const { parameterKey, configKey, featureKey, value } = req.body;
+      const requestBody = req.body;
+      const {parameterKey, configKey, featureKey, value, modelKey, conditionKey} = requestBody;
 
       const remoteConfig = admin.remoteConfig();
       const template = await remoteConfig.getTemplate();
-console.log("TEMPLATE VERSION:", template.version);
-console.log("PARAM COUNT:", Object.keys(template.parameters || {}).length);
-console.log("CONDITION COUNT:", (template.conditions || []).length);
-console.log("TEMPLATE RAW:", JSON.stringify(template).slice(0, 1000));
-
       let parameter = template.parameters[parameterKey];
 
         if (!parameter && template.parameterGroups) {
@@ -43,15 +39,35 @@ console.log("TEMPLATE RAW:", JSON.stringify(template).slice(0, 1000));
         });
         }
 
-      const json = JSON.parse(parameter.defaultValue.value);
+        if (conditionKey) {
+            if (!parameter.conditionalValues) {
+                parameter.conditionalValues = {};
+            }
 
-      if (!json[configKey]) {
-        return res.status(404).json({ error: "Config key not found" });
-      }
+            parameter.conditionalValues[conditionKey] = {
+                value: String(value),
+            };
 
-      json[configKey][featureKey] = value;
-      parameter.defaultValue.value = JSON.stringify(json);
-      //template.parameters[parameterKey] = parameter;
+            await remoteConfig.publishTemplate(template);
+
+            return res.json({ success: true });
+        }
+
+      if (configKey && featureKey && requestBody.modelKey) {
+        const json = JSON.parse(parameter.defaultValue.value);
+
+        json[requestBody.modelKey][featureKey] = value;
+
+        parameter.defaultValue.value = JSON.stringify(json);
+        } else if (configKey && featureKey) {
+        const json = JSON.parse(parameter.defaultValue.value);
+
+        json[configKey][featureKey] = value;
+
+        parameter.defaultValue.value = JSON.stringify(json);
+        } else {
+        parameter.defaultValue.value = String(value);
+        }
 
       await remoteConfig.publishTemplate(template);
 
