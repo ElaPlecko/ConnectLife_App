@@ -52,24 +52,28 @@ export function Markets({ currentUserRole, isDark, onNavigate }) {
   ));
 
   return (
-    <SimplePanel title="Markets">
-      <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {loading && <MarketsSkeleton />}
-          {error && <div className="feature-error">{error}</div>}
-          {!loading && !error && (
-            <Table
-              // ↓ SPREMEMBA: dodan header za novi stolpec
-              headers={["Condition", "Countries", "Platform", ""]}
-              rows={rows}
-            />
-          )}
-        </div>
+  <SimplePanel title="Markets">
+    <GlobeView isDark={isDark}>
+      {loading && <MarketsSkeleton />}
 
-        <div style={{ flexShrink: 0 }}>
-          <GlobeView isDark={isDark} width={320} height={320} />
+      {error && (
+        <div className="feature-error">
+          {error}
         </div>
-      </div>
-    </SimplePanel>
-  );
+      )}
+
+      {!loading && !error && (
+        <Table
+          headers={[
+            "Condition",
+            "Countries",
+            "Platform",
+            "",
+          ]}
+          rows={rows}
+        />
+      )}
+    </GlobeView>
+  </SimplePanel>
+);
 }
