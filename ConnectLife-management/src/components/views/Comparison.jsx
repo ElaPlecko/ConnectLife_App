@@ -4,6 +4,7 @@ import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { motion, AnimatePresence } from "framer-motion";
+import { Icon } from "@iconify/react";
 
 function useResolvedBooleans() {
   const [defaults, setDefaults] = useState({});
@@ -125,10 +126,13 @@ export default function Comparison() {
               return (
                 <section key={device.id} className="comparison-appliance">
                   <div className="appliance-heading">
-                    <span className="mini-icon appliance-icon" />
-                    <div>
-                      <h3>{device.name}</h3>
-                      <p>{device.category}</p>
+                    <div className="appliance-title">
+                      <Icon className="appliance-inline-icon" icon={device.icon} />
+
+                      <div>
+                        <h3>{device.name}</h3>
+                        <p>{device.category}</p>
+                      </div>
                     </div>
                   </div>
 
