@@ -368,3 +368,54 @@
 .users-actions {
   width: 70%;
 }
+
+.globe-view {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 140px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--page);
+}
+
+.globe-view canvas {
+  display: block;
+}
+
+.globe-canvas-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center; 
+  align-items: center;     
+}
+
+.globe-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  max-height: 34%;
+  overflow-y: auto;
+
+  padding: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(246, 249, 251, 0.15),
+    rgba(246, 249, 251, 0.96) 35%,
+    var(--surface)
+  );
+
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+}
+
+[data-theme="dark"] .globe-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(13, 19, 23, 0.1),
+    rgba(13, 19, 23, 0.92) 35%,
+    var(--surface)
+  );
+}

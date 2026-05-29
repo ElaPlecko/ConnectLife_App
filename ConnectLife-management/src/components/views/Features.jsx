@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchAndActivate, getValue } from "firebase/remote-config";
 import { exportFeaturesToExcel } from "../../utils/exportFeaturesToExcel";
 import { remoteConfig } from "../../firebase";
@@ -102,12 +102,13 @@ function buildConfigData(parsedConfig, configKey) {
   return { features, restrictions, modelOverrides };
 }
 
-function ToggleButton({ enabled, onClick }) {
+function ToggleButton({ enabled, onClick, label }) {
   return (
     <button
       className={`switch-button${enabled ? " on" : ""}`}
       type="button"
       aria-pressed={enabled}
+      aria-label={label ?? (enabled ? "Disable feature" : "Enable feature")}
       onClick={onClick}
     >
       <span />
@@ -116,7 +117,16 @@ function ToggleButton({ enabled, onClick }) {
   );
 }
 
-function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle, onModelToggle }) {
+function isConfigEnabled(config) {
+  return (
+    config.features.some((feature) => feature.enabled) ||
+    config.modelOverrides?.some((model) =>
+      model.overrides.some((override) => override.enabled)
+    )
+  );
+}
+
+function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, onModelToggle }) {
   const hasOverrides = overrides.length > 0;
 
   return (
@@ -125,14 +135,18 @@ function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle, o
         <button
           className="feature-row-main"
           type="button"
-          onClick={hasOverrides ? onToggle : undefined}
+          onClick={hasOverrides ? onExpand : undefined}
           disabled={!hasOverrides}
         >
           <strong className="feature-row-title">{feature.name}</strong>
         </button>
 
         <div className="feature-row-toggle">
-          <ToggleButton enabled={feature.enabled} onClick={() => onFeatureToggle(feature)}/>
+          <ToggleButton
+            enabled={feature.enabled}
+            label={`${feature.enabled ? "Disable" : "Enable"} ${feature.name}`}
+            onClick={() => onFeatureToggle(feature)}
+          />
         </div>
 
         <button
@@ -140,7 +154,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle, o
             hasOverrides ? "" : " is-hidden"
           }${expanded ? " is-open" : ""}`}
           type="button"
-          onClick={onToggle}
+          onClick={onExpand}
           aria-label={expanded ? "Collapse model overrides" : "Expand model overrides"}
         >
           <span aria-hidden="true" />
@@ -223,6 +237,7 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
   }
 
   const [expandedFeature, setExpandedFeature] = useState("");
+  const configEnabled = isConfigEnabled(config);
 
   return (
     <div className={`config-block${primary ? " is-primary" : ""}`}>
@@ -232,11 +247,9 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
         </div>
 
         <ToggleButton
-          enabled={
-            config.features.some((f) => f.enabled) ||
-            config.modelOverrides?.some((m) => m.overrides.some((o) => o.enabled))
-          }
-           onClick={() => handleToggleFeature(config.features[0])}
+          enabled={configEnabled}
+          label={`${configEnabled ? "Disable" : "Enable"} ${config.label}`}
+          onClick={() => handleToggleFeature(config.features[0])}
         />
       </div>
 
@@ -252,7 +265,7 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
                 feature={feature}
                 overrides={overrides}
                 expanded={expanded}
-                onToggle={() =>
+                onExpand={() =>
                   setExpandedFeature((current) =>
                     current === feature.key ? "" : feature.key
                   )
@@ -284,6 +297,173 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
   );
 }
 
+function getConfigPreviewFeatures(configs) {
+  return configs.flatMap((config) => {
+    if (config.features.length > 0) {
+      return config.features.map((feature) => ({
+        key: `${config.key}-${feature.key}`,
+        name: feature.name,
+        enabled: feature.enabled,
+      }));
+    }
+
+    return (config.modelOverrides ?? []).flatMap((model) =>
+      model.overrides.map((override) => ({
+        key: `${config.key}-${model.model}-${override.key}`,
+        name: override.name,
+        enabled: override.enabled,
+      }))
+    );
+  });
+}
+
+function PhonePreview({
+  selectedDeviceId,
+  selectedDevice,
+  selectedMarket,
+  configsByDevice,
+  loadingDeviceIds,
+}) {
+  const isAllDevices = selectedDeviceId === "all";
+  const selectedConfigs = selectedDevice
+    ? configsByDevice[selectedDevice.id] ?? []
+    : [];
+  const previewFeatures = getConfigPreviewFeatures(selectedConfigs);
+  const activeFeatures = previewFeatures.filter((feature) => feature.enabled);
+  const visibleFeatures = activeFeatures;
+  const visibleDevices = REMOTE_CONFIG_DEVICES.map((device) => {
+    const configs = configsByDevice[device.id] ?? [];
+    const isLoading = loadingDeviceIds.includes(device.id);
+    const enabled = configs.some(isConfigEnabled);
+
+    return {
+      ...device,
+      enabled,
+      isLoading,
+    };
+  }).filter((device) => device.enabled || device.isLoading);
+
+  return (
+    <aside className="phone-preview-wrap" aria-label="ConnectLife app preview">
+      <div className="phone-frame">
+        <div className="phone-speaker" aria-hidden="true" />
+
+        <div className="phone-screen">
+          <div className="phone-statusbar">
+            <span>9:41</span>
+            <span className="phone-signal">100%</span>
+          </div>
+
+          <div className="phone-home-header">
+            <strong>
+              <span className="phone-brand-mark">C</span>
+              ConnectLife
+            </strong>
+            <Icon icon="lucide:bell" />
+          </div>
+
+          <div className="phone-filter-row">
+            <button type="button">All Floors</button>
+            <span className="phone-market">{selectedMarket}</span>
+          </div>
+
+          <div className="phone-tabs">
+            <span className="is-active">All</span>
+            <span>Living room</span>
+            <span>Bedroom</span>
+          </div>
+
+          {!isAllDevices && (
+            <div className="phone-selected-summary">
+              {selectedDevice && <Icon icon={selectedDevice.icon} />}
+              <div>
+                <strong>{selectedDevice?.name}</strong>
+                <span>{activeFeatures.length} active features</span>
+              </div>
+            </div>
+          )}
+
+          <div className="phone-card-scroll">
+            {isAllDevices ? (
+              <div className="phone-card-grid">
+                {visibleDevices.map((device) => (
+                  <div
+                    className={`phone-app-card${device.enabled ? " is-on" : ""}`}
+                    key={device.id}
+                  >
+                    <div className="phone-card-top">
+                      <Icon className="phone-device-icon" icon={device.icon} />
+                      <span className="phone-power">
+                        <Icon icon="lucide:power" />
+                      </span>
+                    </div>
+                    <strong>{device.name}</strong>
+                    <span>{device.isLoading ? "Syncing" : "On"}</span>
+                  </div>
+                ))}
+
+                {visibleDevices.length === 0 && (
+                  <div className="phone-empty-state">
+                    No active devices for this market.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="phone-card-grid">
+                {visibleFeatures.map((feature) => (
+                  <div
+                    className={`phone-app-card${feature.enabled ? " is-on" : ""}`}
+                    key={feature.key}
+                  >
+                    <div className="phone-card-top">
+                      {selectedDevice && (
+                        <Icon className="phone-device-icon" icon={selectedDevice.icon} />
+                      )}
+                      <span className="phone-power">
+                        <Icon icon="lucide:power" />
+                      </span>
+                    </div>
+                    <strong>{feature.name}</strong>
+                    <span>{feature.enabled ? "On" : "Off"}</span>
+                  </div>
+                ))}
+
+                {visibleFeatures.length === 0 && (
+                  <div className="phone-empty-state">
+                    No active features for this appliance.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="phone-bottom-nav">
+            <span>
+              <Icon icon="lucide:layout-dashboard" />
+              Dashboard
+            </span>
+            <span className="is-active">
+              <Icon icon="lucide:blocks" />
+              Devices
+            </span>
+            <span>
+              <Icon icon="lucide:workflow" />
+              Automation
+            </span>
+            <span>
+              <Icon icon="lucide:menu" />
+              Menu
+            </span>
+            <button type="button">
+              <Icon icon="lucide:plus" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
   if (selectedMarket === "Default value") return defaultValue;
 
@@ -306,17 +486,29 @@ function getAvailableMarkets() {
   return REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label).sort();
 }
 
-function ApplianceSection({ appliance, selectedMarket }) {
+function ApplianceSection({
+  appliance,
+  selectedMarket,
+  cachedConfigs = [],
+  onConfigsChange,
+  onLoadingChange,
+}) {
   const [open, setOpen] = useState(false);
-  const [configs, setConfigs] = useState([]);
+  const [configs, setConfigs] = useState(cachedConfigs);
+  const cachedConfigsRef = useRef(cachedConfigs);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    cachedConfigsRef.current = cachedConfigs;
+  }, [cachedConfigs]);
 
   useEffect(() => {
     async function loadRemoteConfig() {
       try {
         setLoading(true);
         setError("");
+        onLoadingChange?.(appliance.id, true);
 
         await fetchAndActivate(remoteConfig);
 
@@ -382,16 +574,77 @@ function ApplianceSection({ appliance, selectedMarket }) {
         }
 
         setConfigs(loadedConfigs);
+        onConfigsChange?.(appliance.id, loadedConfigs);
       } catch (err) {
         console.error(err);
-        setError("Could not load Remote Config.");
+
+        const cachedFallback = cachedConfigsRef.current;
+
+        if (cachedFallback.length === 0) {
+          setError("Could not load Remote Config.");
+          onConfigsChange?.(appliance.id, []);
+        } else {
+          setError("");
+          setConfigs(cachedFallback);
+          onConfigsChange?.(appliance.id, cachedFallback);
+        }
       } finally {
         setLoading(false);
+        onLoadingChange?.(appliance.id, false);
       }
     }
 
     loadRemoteConfig();
-  }, [appliance, selectedMarket]);
+  }, [appliance, selectedMarket, onConfigsChange, onLoadingChange]);
+
+  const toggleFeature = (configKey, featureKey) => {
+    setConfigs((currentConfigs) => {
+      const nextConfigs = currentConfigs.map((config) => {
+        if (config.key !== configKey) return config;
+
+        return {
+          ...config,
+          features: config.features.map((feature) =>
+            feature.key === featureKey
+              ? { ...feature, enabled: !feature.enabled }
+              : feature
+          ),
+        };
+      });
+
+      onConfigsChange?.(appliance.id, nextConfigs);
+      return nextConfigs;
+    });
+  };
+
+  const toggleConfig = (configKey) => {
+    setConfigs((currentConfigs) => {
+      const target = currentConfigs.find((config) => config.key === configKey);
+      const nextEnabled = target ? !isConfigEnabled(target) : true;
+
+      const nextConfigs = currentConfigs.map((config) => {
+        if (config.key !== configKey) return config;
+
+        return {
+          ...config,
+          features: config.features.map((feature) => ({
+            ...feature,
+            enabled: nextEnabled,
+          })),
+          modelOverrides: config.modelOverrides?.map((model) => ({
+            ...model,
+            overrides: model.overrides.map((override) => ({
+              ...override,
+              enabled: nextEnabled,
+            })),
+          })),
+        };
+      });
+
+      onConfigsChange?.(appliance.id, nextConfigs);
+      return nextConfigs;
+    });
+  };
 
   const totalFeatures = configs.reduce(
     (sum, config) => sum + config.features.length,
@@ -483,21 +736,45 @@ function ApplianceSection({ appliance, selectedMarket }) {
 
 // ↓ SPREMEMBA: sprejme initialMarket prop
 export default function Features({ initialMarket = "Default value" }) {
-  const [selectedDeviceId, setSelectedDeviceId] = useState("all");
+  const [filters, setFilters] = useState({
+    selectedDeviceId: "all",
+    selectedMarket: initialMarket,
+    initialMarket,
+  });
+  const [configsByDevice, setConfigsByDevice] = useState({});
+  const [loadingDeviceIds, setLoadingDeviceIds] = useState([]);
   const markets = getAvailableMarkets();
 
-  // ↓ SPREMEMBA: initialMarket nastavi privzeti market
-  const [selectedMarket, setSelectedMarket] = useState(initialMarket);
+  if (filters.initialMarket !== initialMarket) {
+    setFilters({
+      selectedDeviceId: "all",
+      selectedMarket: initialMarket,
+      initialMarket,
+    });
+  }
 
-  // ↓ SPREMEMBA: ko prideš iz Markets page, posodobi market in resetiraj na all appliances
-  useEffect(() => {
-    setSelectedMarket(initialMarket);
-    setSelectedDeviceId("all");
-  }, [initialMarket]);
+  const { selectedDeviceId, selectedMarket } = filters;
 
   const selectedDevice = REMOTE_CONFIG_DEVICES.find(
     (device) => device.id === selectedDeviceId
   );
+
+  const handleConfigsChange = useCallback((deviceId, configs) => {
+    setConfigsByDevice((current) => ({
+      ...current,
+      [deviceId]: configs,
+    }));
+  }, []);
+
+  const handleLoadingChange = useCallback((deviceId, isLoading) => {
+    setLoadingDeviceIds((current) => {
+      if (isLoading) {
+        return current.includes(deviceId) ? current : [...current, deviceId];
+      }
+
+      return current.filter((id) => id !== deviceId);
+    });
+  }, []);
 
   const handleExport = async () => {
     await exportFeaturesToExcel({ market: selectedMarket });
@@ -510,7 +787,12 @@ export default function Features({ initialMarket = "Default value" }) {
           Appliance
           <select
             value={selectedDeviceId}
-            onChange={(e) => setSelectedDeviceId(e.target.value)}
+            onChange={(e) =>
+              setFilters((current) => ({
+                ...current,
+                selectedDeviceId: e.target.value,
+              }))
+            }
           >
             <option value="all">All appliances</option>
 
@@ -526,7 +808,12 @@ export default function Features({ initialMarket = "Default value" }) {
           Market
           <select
             value={selectedMarket}
-            onChange={(e) => setSelectedMarket(e.target.value)}
+            onChange={(e) =>
+              setFilters((current) => ({
+                ...current,
+                selectedMarket: e.target.value,
+              }))
+            }
           >
             <option value="Default value">Default value</option>
 
@@ -555,15 +842,29 @@ export default function Features({ initialMarket = "Default value" }) {
                   key={device.id}
                   appliance={device}
                   selectedMarket={selectedMarket}
+                  cachedConfigs={configsByDevice[device.id] ?? []}
+                  onConfigsChange={handleConfigsChange}
+                  onLoadingChange={handleLoadingChange}
                 />
               ))
             : selectedDevice && (
                 <ApplianceSection
                   appliance={selectedDevice}
                   selectedMarket={selectedMarket}
+                  cachedConfigs={configsByDevice[selectedDevice.id] ?? []}
+                  onConfigsChange={handleConfigsChange}
+                  onLoadingChange={handleLoadingChange}
                 />
               )}
         </div>
+
+        <PhonePreview
+          selectedDeviceId={selectedDeviceId}
+          selectedDevice={selectedDevice}
+          selectedMarket={selectedMarket}
+          configsByDevice={configsByDevice}
+          loadingDeviceIds={loadingDeviceIds}
+        />
       </div>
     </section>
   );
