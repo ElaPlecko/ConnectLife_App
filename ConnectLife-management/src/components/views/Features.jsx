@@ -6,6 +6,8 @@ import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { Icon } from "@iconify/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { updateRemoteFeature } from "../../services/updateRemoteConfig";
 
 function formatFeatureName(key) {
   return key
@@ -100,12 +102,13 @@ function buildConfigData(parsedConfig, configKey) {
   return { features, restrictions, modelOverrides };
 }
 
-function ToggleButton({ enabled }) {
+function ToggleButton({ enabled, onClick }) {
   return (
     <button
       className={`switch-button${enabled ? " on" : ""}`}
       type="button"
       aria-pressed={enabled}
+      onClick={onClick}
     >
       <span />
       <em>{enabled ? "ON" : "OFF"}</em>
@@ -113,7 +116,7 @@ function ToggleButton({ enabled }) {
   );
 }
 
-function FeatureRow({ feature, overrides, expanded, onToggle }) {
+function FeatureRow({ feature, overrides, expanded, onToggle, onFeatureToggle }) {
   const hasOverrides = overrides.length > 0;
 
   return (
@@ -129,7 +132,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
         </button>
 
         <div className="feature-row-toggle">
-          <ToggleButton enabled={feature.enabled} />
+          <ToggleButton enabled={feature.enabled} onClick={() => onFeatureToggle(feature)}/>
         </div>
 
         <button
@@ -152,7 +155,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
             {overrides.map((item) => (
               <div className="model-override" key={`${item.model}-${feature.key}`}>
                 <span className="model-name">{item.model}</span>
-                <ToggleButton enabled={item.enabled} />
+                <ToggleButton enabled={item.enabled}/>
               </div>
             ))}
           </div>
@@ -162,7 +165,7 @@ function FeatureRow({ feature, overrides, expanded, onToggle }) {
   );
 }
 
-function ConfigBlock({ config, primary = false }) {
+function ConfigBlock({ config, primary, onUpdateFeature }) {
   const showFeatureList = !(
     !primary &&
     config.features.length === 1 &&
@@ -181,6 +184,28 @@ function ConfigBlock({ config, primary = false }) {
       .filter(Boolean);
     return map;
   }, {});
+
+  async function handleToggleFeature(feature) {
+    const newValue = !feature.enabled;
+
+    try {
+      await updateRemoteFeature({
+        parameterKey: config.key,
+        configKey: config.configKey,
+        featureKey: feature.key,
+        value: newValue,
+      });
+
+      onUpdateFeature(
+        config.key,
+        feature.key,
+        newValue
+      );
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const [expandedFeature, setExpandedFeature] = useState("");
 
@@ -216,6 +241,7 @@ function ConfigBlock({ config, primary = false }) {
                     current === feature.key ? "" : feature.key
                   )
                 }
+                onFeatureToggle={handleToggleFeature}
               />
             );
           })}
@@ -355,6 +381,26 @@ function ApplianceSection({ appliance, selectedMarket }) {
 
   const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
 
+  function updateFeatureState(configKey, featureKey, value) {
+    setConfigs((previous) =>
+      previous.map((config) =>
+        config.key === configKey
+          ? {
+              ...config,
+              features: config.features.map((feature) =>
+                feature.key === featureKey
+                  ? {
+                      ...feature,
+                      enabled: value,
+                    }
+                  : feature
+              ),
+            }
+          : config
+      )
+    );
+  }
+
   return (
     <section className="appliance-section">
       <button
@@ -391,6 +437,7 @@ function ApplianceSection({ appliance, selectedMarket }) {
                 key={config.key}
                 config={config}
                 primary={index === 0 && config.key === primaryKey}
+                onUpdateFeature={updateFeatureState}
               />
             ))}
         </div>
