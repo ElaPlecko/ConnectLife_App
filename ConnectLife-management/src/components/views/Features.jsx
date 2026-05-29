@@ -357,6 +357,7 @@ function ApplianceSection({ appliance, selectedMarket }) {
             loadedConfigs.push({
               key: remoteConfigItem.key,
               label: remoteConfigItem.label,
+              configKey: remoteConfigItem.configKey,
               ...data,
             });
           }

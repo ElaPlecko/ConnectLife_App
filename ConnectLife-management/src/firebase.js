@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, "us-central1");
 export const remoteConfig = getRemoteConfig(app);
 
 remoteConfig.settings.minimumFetchIntervalMillis = 0;
