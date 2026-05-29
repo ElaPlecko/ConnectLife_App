@@ -653,40 +653,44 @@ function ApplianceSection({
 
   const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
 
-  function updateFeatureState(configKey, featureKey, value, modelKey = null) {
-    setConfigs((previous) =>
-      previous.map((config) => {
-        if (config.key !== configKey) return config;
+ function updateFeatureState(configKey, featureKey, value, modelKey = null) {
+  setConfigs((previous) => {
+    const nextConfigs = previous.map((config) => {
+      if (config.key !== configKey) return config;
 
-        if (modelKey) {
-          return {
-            ...config,
-            modelOverrides: config.modelOverrides.map((item) =>
-              item.model === modelKey
-                ? {
-                    ...item,
-                    overrides: item.overrides.map((override) =>
-                      override.key === featureKey
-                        ? { ...override, enabled: value }
-                        : override
-                    ),
-                  }
-                : item
-            ),
-          };
-        }
-
+      if (modelKey) {
         return {
           ...config,
-          features: config.features.map((feature) =>
-            feature.key === featureKey
-              ? { ...feature, enabled: value }
-              : feature
+          modelOverrides: config.modelOverrides.map((item) =>
+            item.model === modelKey
+              ? {
+                  ...item,
+                  overrides: item.overrides.map((override) =>
+                    override.key === featureKey
+                      ? { ...override, enabled: value }
+                      : override
+                  ),
+                }
+              : item
           ),
         };
-      })
-    );
-  }
+      }
+
+      return {
+        ...config,
+        features: config.features.map((feature) =>
+          feature.key === featureKey
+            ? { ...feature, enabled: value }
+            : feature
+        ),
+      };
+    });
+
+    onConfigsChange?.(appliance.id, nextConfigs);
+
+    return nextConfigs;
+  });
+}
 
   return (
     <section className="appliance-section">
