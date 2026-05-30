@@ -61,7 +61,7 @@ export function Content() {
     </SimplePanel>
   );*/
   return (
-    <SimplePanel title="Events" action="Manage Events">
+    <SimplePanel title="Events">
       <EventsDashboard />
     </SimplePanel>
   );

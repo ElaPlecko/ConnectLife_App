@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { appliances, activities, contentTypes } from "../../data/data.js";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions.js";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices.js";
 import { iconSvg, Table } from "../../utils/helpers.jsx";
 import { motion } from "framer-motion";
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   name: condition.label,
@@ -42,11 +44,12 @@ function AnimatedNumber({ value }) {
   return current;
 }
 
+const linkKeys = ["Support", "Warranty", "Shop"];
 function StatCards({ onNavigate }) {
   const stats = [
   ["globe", markets.length.toString(), "Markets", "markets"],
   ["sliders", REMOTE_CONFIG_DEVICES.length.toString(), "Appliance groups", "features"],
-  ["file", contentTypes.length.toString(), "Content types", "content"],
+  ["file", contentTypes.length.toString(), "Events", "content"],
   ["link", linkKeys.length.toString(), "External links", "links"],
   ];
   return (
@@ -103,40 +106,54 @@ function MarketsTable({ limit, onNavigate }) {
   return <Table headers={["Market", "Code", "Segments", "Status", "Last updated", ""]} rows={rows} />;
 }
 
-function ContentTable() {
+function EventsChart() {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
 
-  const rows = contentTypes.map(([type, description]) => (
-    <tr key={type}>
-      <td>
-        <span className="content-type">
-          <span className="mini-icon" />
+  const top5 = [
+    { event_name: "user_engagement", event_count: 24022514 },
+    { event_name: "screen_view", event_count: 17004079 },
+    { event_name: "ApplianceDashboard_ShortcutBtn", event_count: 11082348 },
+    { event_name: "session_start", event_count: 10311584 },
+    { event_name: "ApplianceDashboard_Start_Click", event_count: 946414 },
+  ];
 
-          <span>
-            <strong>{type}</strong>
-            <small>{description}</small>
-          </span>
-        </span>
-      </td>
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    if (chartRef.current) chartRef.current.destroy();
 
-      {markets.map((market) => (
-        <td key={market.name}>-</td>
-      ))}
-    </tr>
-  ));
+    chartRef.current = new Chart(canvasRef.current, {
+      type: "bar",
+      data: {
+        labels: top5.map((r) => r.event_name.replace(/_/g, " ").substring(0, 22)),
+        datasets: [{
+          data: top5.map((r) => r.event_count),
+          backgroundColor: "#185FA5",
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { callback: (v) => v >= 1e6 ? (v/1e6).toFixed(0)+"M" : (v/1e3).toFixed(0)+"K", font: { size: 10 } }, grid: { color: "rgba(128,128,128,0.08)" } },
+          y: { ticks: { font: { size: 10 } }, grid: { display: false } },
+        },
+      },
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
 
   return (
-    <Table
-      headers={[
-        "Content type",
-        ...markets.map((m) => <>{m.name}</>),
-      ]}
-      rows={rows}
-      minWidth={620}
-    />
+    <div style={{ position: "relative", height: 180 }}>
+      <canvas ref={canvasRef} />
+    </div>
   );
 }
 
-const linkKeys = ["Support", "Warranty", "Shop"];
+/*const linkKeys = ["Support", "Warranty", "Shop"];
 function LinksTable() {
   const rows = linkKeys.map((type) => (
     <tr key={type}>
@@ -160,7 +177,7 @@ function LinksTable() {
       minWidth={760}
     />
   );
-}
+}*/
 
 function ApplianceSummary() {
   const headers = ["Appliance", ...markets.map((m) => m.name)];
@@ -184,15 +201,41 @@ function ApplianceSummary() {
   return <Table headers={headers} rows={rows} minWidth={620} />;
 }
 
-function ActivityList() {
+function RecentAuditLog() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { collection, getDocs, orderBy, query, limit } = await import("firebase/firestore");
+        const { db } = await import("../../firebase");
+        const q = query(collection(db, "auditLogs"), orderBy("timestamp", "desc"), limit(5));
+        const snap = await getDocs(q);
+        setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return <div style={{ fontSize: 13, color: "#888", padding: "1rem 0" }}>Loading...</div>;
+  if (!logs.length) return <div style={{ fontSize: 13, color: "#888", padding: "1rem 0" }}>No activity yet.</div>;
+
   return (
     <div className="activity-list">
-      {activities.map(([action, entity, market, time], i) => (
-        <article key={i} className="activity-item">
+      {logs.map((log) => (
+        <article key={log.id} className="activity-item">
           <span className="mini-icon" />
-          <div><strong>{action}</strong><small>{entity}</small></div>
-          <span className="market-chip">{market}</span>
-          <time>{time}</time>
+          <div>
+            <strong>{log.action}</strong>
+            <small>{log.details}</small>
+          </div>
+          <span className="market-chip">{log.userEmail?.split("@")[0]}</span>
+          <time>{log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString() : "—"}</time>
         </article>
       ))}
     </div>
@@ -230,26 +273,26 @@ export default function Dashboard({ onNavigate, currentUserRole }) {
       </div>
       <div className="three-col">
         <section className="panel">
-          <div className="panel-header">
-            <h2>Content summary</h2>
-            <button className="text-link" type="button" onClick={() => onNavigate("content")}>Manage content</button>
-          </div>
-          <ContentTable />
-          <button className="text-link" type="button" onClick={() => onNavigate("content")}>View all content -&gt;</button>
-        </section>
-        <section className="panel">
+        <div className="panel-header">
+          <h2>Events summary</h2>
+          <button className="text-link" type="button" onClick={() => onNavigate("content")}>View all events</button>
+        </div>
+        <EventsChart />
+        <button className="text-link" type="button" onClick={() => onNavigate("content")}>View all events →</button>
+      </section>
+        {/*<section className="panel">
           <div className="panel-header">
             <h2>External links summary</h2>
             <button className="text-link" type="button" onClick={() => onNavigate("links")}>Manage links</button>
           </div>
           <LinksTable />
           <button className="text-link" type="button" onClick={() => onNavigate("links")}>View all links -&gt;</button>
-        </section>
+        </section>*/}
         <section className="panel">
-          <h2>Recent activity</h2>
-          <ActivityList />
-          <button className="text-link" type="button" onClick={() => onNavigate("audit")}>View full log -&gt;</button>
-        </section>
+        <h2>Recent activity</h2>
+        <RecentAuditLog />
+        <button className="text-link" type="button" onClick={() => onNavigate("audit")}>View full log →</button>
+      </section>
       </div>
       <footer className="footer">
         <span>ConnectLife App Management Portal (POC)</span><strong>Hisense</strong>

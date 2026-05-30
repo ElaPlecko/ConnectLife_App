@@ -104,7 +104,7 @@ function Portal() {
       />
 
       <main className="app-shell">
-        <Topbar onNavigate={handleNavigate} />
+        <Topbar onNavigate={handleNavigate} theme={theme} />
 
         <section
           className="dashboard"
