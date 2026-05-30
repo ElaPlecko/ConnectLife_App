@@ -30,12 +30,8 @@ function AnimatedNumber({ value }) {
     function update(now) {
       const progress = Math.min((now - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-
       setCurrent(Math.round(start + (target - start) * eased));
-
-      if (progress < 1) {
-        requestAnimationFrame(update);
-      }
+      if (progress < 1) requestAnimationFrame(update);
     }
 
     requestAnimationFrame(update);
@@ -45,12 +41,13 @@ function AnimatedNumber({ value }) {
 }
 
 const linkKeys = ["Support", "Warranty", "Shop"];
+
 function StatCards({ onNavigate }) {
   const stats = [
-  ["globe", markets.length.toString(), "Markets", "markets"],
-  ["sliders", REMOTE_CONFIG_DEVICES.length.toString(), "Appliance groups", "features"],
-  ["file", contentTypes.length.toString(), "Events", "content"],
-  ["link", linkKeys.length.toString(), "External links", "links"],
+    ["globe", markets.length.toString(), "Markets", "markets"],
+    ["sliders", REMOTE_CONFIG_DEVICES.length.toString(), "Appliance groups", "features"],
+    ["file", contentTypes.length.toString(), "Events", "content"],
+    ["link", linkKeys.length.toString(), "External links", "links"],
   ];
   return (
     <motion.div
@@ -59,11 +56,7 @@ function StatCards({ onNavigate }) {
       animate="show"
       variants={{
         hidden: {},
-        show: {
-          transition: {
-            staggerChildren: 0.08,
-          },
-        },
+        show: { transition: { staggerChildren: 0.08 } },
       }}
     >
       {stats.map(([icon, number, label, view]) => (
@@ -80,9 +73,7 @@ function StatCards({ onNavigate }) {
         >
           {iconSvg(icon)}
           <div>
-            <strong>
-              <AnimatedNumber value={number} />
-            </strong>
+            <strong><AnimatedNumber value={number} /></strong>
             <span>{label}</span>
             <em>View all -&gt;</em>
           </div>
@@ -92,18 +83,18 @@ function StatCards({ onNavigate }) {
   );
 }
 
-function MarketsTable({ limit, onNavigate }) {
-  const rows = markets.slice(0, limit || markets.length).map((market) => (
+function MarketsTable({ onNavigate }) {
+  const limit = appliances.length;
+  const rows = markets.slice(0, limit).map((market) => (
     <tr key={market.name}>
       <td><span className="market-name">{market.name}</span></td>
       <td>{market.name}</td>
       <td>{market.segments}</td>
-      <td><span className={`badge ${market.status.toLowerCase()}`}>{market.status}</span></td>
       <td>{market.updated}</td>
       <td className="more">...</td>
     </tr>
   ));
-  return <Table headers={["Market", "Code", "Segments", "Status", "Last updated", ""]} rows={rows} />;
+  return <Table headers={["Market", "Code", "Segments", "Last updated", ""]} rows={rows} />;
 }
 
 function EventsChart() {
@@ -138,7 +129,13 @@ function EventsChart() {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { callback: (v) => v >= 1e6 ? (v/1e6).toFixed(0)+"M" : (v/1e3).toFixed(0)+"K", font: { size: 10 } }, grid: { color: "rgba(128,128,128,0.08)" } },
+          x: {
+            ticks: {
+              callback: (v) => v >= 1e6 ? (v / 1e6).toFixed(0) + "M" : (v / 1e3).toFixed(0) + "K",
+              font: { size: 10 },
+            },
+            grid: { color: "rgba(128,128,128,0.08)" },
+          },
           y: { ticks: { font: { size: 10 } }, grid: { display: false } },
         },
       },
@@ -153,32 +150,6 @@ function EventsChart() {
   );
 }
 
-/*const linkKeys = ["Support", "Warranty", "Shop"];
-function LinksTable() {
-  const rows = linkKeys.map((type) => (
-    <tr key={type}>
-      <td>
-        <strong>{type}</strong>
-      </td>
-
-      {markets.map((market) => (
-        <td key={market.name}>-</td>
-      ))}
-    </tr>
-  ));
-
-  return (
-    <Table
-      headers={[
-        "Link type",
-        ...markets.map((m) => <>{m.name}</>),
-      ]}
-      rows={rows}
-      minWidth={760}
-    />
-  );
-}*/
-
 function ApplianceSummary() {
   const headers = ["Appliance", ...markets.map((m) => m.name)];
   const rows = appliances.map((appliance) => {
@@ -188,12 +159,19 @@ function ApplianceSummary() {
         <td>
           <span className="content-type">
             <span className="mini-icon appliance-icon" />
-            <span><strong>{appliance.name}</strong><small>{appliance.category}</small></span>
+            <span>
+              <strong>{appliance.name}</strong>
+              <small>{appliance.category}</small>
+            </span>
           </span>
         </td>
         {markets.map((market) => {
           const activeCount = featureList.filter((f) => appliance.features[f][market.name]).length;
-          return <td key={market.name}><span className="score-pill">{activeCount}/{featureList.length}</span></td>;
+          return (
+            <td key={market.name}>
+              <span className="score-pill">{activeCount}/{featureList.length}</span>
+            </td>
+          );
         })}
       </tr>
     );
@@ -246,56 +224,67 @@ export default function Dashboard({ onNavigate, currentUserRole }) {
   return (
     <>
       <StatCards onNavigate={onNavigate} />
+
       <div className="two-col">
         <section className="panel">
           <div className="panel-header">
             <h2>Markets</h2>
             {currentUserRole === "admin" && (
-            <button
-              className="primary-button"
-              type="button"
-            >
-              + Add Market
-            </button>
-          )}
+              <button className="primary-button" type="button">+ Add Market</button>
+            )}
           </div>
-          <MarketsTable onNavigate={onNavigate} />
-          <button className="text-link" type="button" onClick={() => onNavigate("markets")}>View all markets -&gt;</button>
+          <div className="table-scroll">
+            <MarketsTable onNavigate={onNavigate} />
+          </div>
+          <button className="text-link" type="button" onClick={() => onNavigate("markets")}>
+            View all markets →
+          </button>
         </section>
+
         <section className="panel">
           <div className="panel-header">
             <h2>Feature summary</h2>
-            <button className="text-link" type="button" onClick={() => onNavigate("features")}>Manage features</button>
+            <button className="text-link" type="button" onClick={() => onNavigate("features")}>
+              Manage features
+            </button>
           </div>
-          <ApplianceSummary />
-          <button className="text-link" type="button" onClick={() => onNavigate("features")}>View all features -&gt;</button>
+          <div className="table-scroll">
+            <ApplianceSummary />
+          </div>
+          <button className="text-link" type="button" onClick={() => onNavigate("features")}>
+            View all features →
+          </button>
         </section>
       </div>
-      <div className="three-col">
+
+      <div className="two-col">
         <section className="panel">
-        <div className="panel-header">
-          <h2>Events summary</h2>
-          <button className="text-link" type="button" onClick={() => onNavigate("content")}>View all events</button>
-        </div>
-        <EventsChart />
-        <button className="text-link" type="button" onClick={() => onNavigate("content")}>View all events →</button>
-      </section>
-        {/*<section className="panel">
           <div className="panel-header">
-            <h2>External links summary</h2>
-            <button className="text-link" type="button" onClick={() => onNavigate("links")}>Manage links</button>
+            <h2>Events summary</h2>
+            <button className="text-link" type="button" onClick={() => onNavigate("content")}>
+              View all events
+            </button>
           </div>
-          <LinksTable />
-          <button className="text-link" type="button" onClick={() => onNavigate("links")}>View all links -&gt;</button>
-        </section>*/}
+          <EventsChart />
+          <button className="text-link" type="button" onClick={() => onNavigate("content")}>
+            View all events →
+          </button>
+        </section>
+
         <section className="panel">
-        <h2>Recent activity</h2>
-        <RecentAuditLog />
-        <button className="text-link" type="button" onClick={() => onNavigate("audit")}>View full log →</button>
-      </section>
+          <div className="panel-header">
+            <h2>Recent activity</h2>
+          </div>
+          <RecentAuditLog />
+          <button className="text-link" type="button" onClick={() => onNavigate("audit")}>
+            View full log →
+          </button>
+        </section>
       </div>
+
       <footer className="footer">
-        <span>ConnectLife App Management Portal (POC)</span><strong>Hisense</strong>
+        <span>ConnectLife App Management Portal (POC)</span>
+        <strong>Hisense</strong>
       </footer>
     </>
   );
