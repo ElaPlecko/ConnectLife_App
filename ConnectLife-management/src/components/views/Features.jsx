@@ -169,7 +169,7 @@ function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, o
             {overrides.map((item) => (
               <div className="model-override" key={`${item.model}-${feature.key}`}>
                 <span className="model-name">{item.model}</span>
-                <ToggleButton enabled={item.enabled}  onClick={() => onModelToggle(item, feature)}/>
+                <ToggleButton enabled={item.enabled} onClick={() => onModelToggle(item, feature)} />
               </div>
             ))}
           </div>
@@ -208,15 +208,13 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
         configKey: config.configKey,
         featureKey: feature.key,
         value: newValue,
-        conditionKey: config.configKey === null && selectedMarket !== "Default value"? selectedMarket: undefined,
+        conditionKey:
+          config.configKey === null && selectedMarket !== "Default value"
+            ? selectedMarket
+            : undefined,
       });
 
-      onUpdateFeature(
-        config.key,
-        feature.key,
-        newValue
-      );
-
+      onUpdateFeature(config.key, feature.key, newValue);
     } catch (error) {
       console.error(error);
     }
@@ -317,12 +315,17 @@ function getConfigPreviewFeatures(configs) {
   });
 }
 
+function getAvailableMarkets() {
+  return REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label).sort();
+}
 function PhonePreview({
   selectedDeviceId,
   selectedDevice,
   selectedMarket,
   configsByDevice,
   loadingDeviceIds,
+  onDeviceChange,
+  onMarketChange,
 }) {
   const isAllDevices = selectedDeviceId === "all";
   const selectedConfigs = selectedDevice
@@ -331,6 +334,7 @@ function PhonePreview({
   const previewFeatures = getConfigPreviewFeatures(selectedConfigs);
   const activeFeatures = previewFeatures.filter((feature) => feature.enabled);
   const visibleFeatures = activeFeatures;
+
   const visibleDevices = REMOTE_CONFIG_DEVICES.map((device) => {
     const configs = configsByDevice[device.id] ?? [];
     const isLoading = loadingDeviceIds.includes(device.id);
@@ -342,6 +346,8 @@ function PhonePreview({
       isLoading,
     };
   }).filter((device) => device.enabled || device.isLoading);
+
+  const markets = getAvailableMarkets();
 
   return (
     <aside className="phone-preview-wrap" aria-label="ConnectLife app preview">
@@ -364,7 +370,36 @@ function PhonePreview({
 
           <div className="phone-filter-row">
             <button type="button">All Floors</button>
-            <span className="phone-market">{selectedMarket}</span>
+
+            <select
+              className="phone-market"
+              style={{ appearance: "none", WebkitAppearance: "none" }}
+              value={selectedDeviceId}
+              onChange={(e) => onDeviceChange?.(e.target.value)}
+              aria-label="Select appliance"
+            >
+              <option value="all">All appliances</option>
+              {REMOTE_CONFIG_DEVICES.map((device) => (
+                <option key={device.id} value={device.id}>
+                  {device.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="phone-market"
+              style={{ appearance: "none", WebkitAppearance: "none" }}
+              value={selectedMarket}
+              onChange={(e) => onMarketChange?.(e.target.value)}
+              aria-label="Select market"
+            >
+              <option value="Default value">Default value</option>
+              {markets.map((market) => (
+                <option key={market} value={market}>
+                  {market}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="phone-tabs">
@@ -482,10 +517,6 @@ function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
   return override ? override.value : defaultValue;
 }
 
-function getAvailableMarkets() {
-  return REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label).sort();
-}
-
 function ApplianceSection({
   appliance,
   selectedMarket,
@@ -597,16 +628,34 @@ function ApplianceSection({
     loadRemoteConfig();
   }, [appliance, selectedMarket, onConfigsChange, onLoadingChange]);
 
-  const toggleFeature = (configKey, featureKey) => {
-    setConfigs((currentConfigs) => {
-      const nextConfigs = currentConfigs.map((config) => {
+  function updateFeatureState(configKey, featureKey, value, modelKey = null) {
+    setConfigs((previous) => {
+      const nextConfigs = previous.map((config) => {
         if (config.key !== configKey) return config;
+
+        if (modelKey) {
+          return {
+            ...config,
+            modelOverrides: config.modelOverrides.map((item) =>
+              item.model === modelKey
+                ? {
+                    ...item,
+                    overrides: item.overrides.map((override) =>
+                      override.key === featureKey
+                        ? { ...override, enabled: value }
+                        : override
+                    ),
+                  }
+                : item
+            ),
+          };
+        }
 
         return {
           ...config,
           features: config.features.map((feature) =>
             feature.key === featureKey
-              ? { ...feature, enabled: !feature.enabled }
+              ? { ...feature, enabled: value }
               : feature
           ),
         };
@@ -615,36 +664,7 @@ function ApplianceSection({
       onConfigsChange?.(appliance.id, nextConfigs);
       return nextConfigs;
     });
-  };
-
-  const toggleConfig = (configKey) => {
-    setConfigs((currentConfigs) => {
-      const target = currentConfigs.find((config) => config.key === configKey);
-      const nextEnabled = target ? !isConfigEnabled(target) : true;
-
-      const nextConfigs = currentConfigs.map((config) => {
-        if (config.key !== configKey) return config;
-
-        return {
-          ...config,
-          features: config.features.map((feature) => ({
-            ...feature,
-            enabled: nextEnabled,
-          })),
-          modelOverrides: config.modelOverrides?.map((model) => ({
-            ...model,
-            overrides: model.overrides.map((override) => ({
-              ...override,
-              enabled: nextEnabled,
-            })),
-          })),
-        };
-      });
-
-      onConfigsChange?.(appliance.id, nextConfigs);
-      return nextConfigs;
-    });
-  };
+  }
 
   const totalFeatures = configs.reduce(
     (sum, config) => sum + config.features.length,
@@ -652,45 +672,6 @@ function ApplianceSection({
   );
 
   const primaryKey = appliance.remoteKeys[0]?.key ?? appliance.category;
-
- function updateFeatureState(configKey, featureKey, value, modelKey = null) {
-  setConfigs((previous) => {
-    const nextConfigs = previous.map((config) => {
-      if (config.key !== configKey) return config;
-
-      if (modelKey) {
-        return {
-          ...config,
-          modelOverrides: config.modelOverrides.map((item) =>
-            item.model === modelKey
-              ? {
-                  ...item,
-                  overrides: item.overrides.map((override) =>
-                    override.key === featureKey
-                      ? { ...override, enabled: value }
-                      : override
-                  ),
-                }
-              : item
-          ),
-        };
-      }
-
-      return {
-        ...config,
-        features: config.features.map((feature) =>
-          feature.key === featureKey
-            ? { ...feature, enabled: value }
-            : feature
-        ),
-      };
-    });
-
-    onConfigsChange?.(appliance.id, nextConfigs);
-
-    return nextConfigs;
-  });
-}
 
   return (
     <section className="appliance-section">
@@ -737,8 +718,6 @@ function ApplianceSection({
     </section>
   );
 }
-
-// ↓ SPREMEMBA: sprejme initialMarket prop
 export default function Features({ initialMarket = "Default value" }) {
   const [filters, setFilters] = useState({
     selectedDeviceId: "all",
@@ -784,6 +763,20 @@ export default function Features({ initialMarket = "Default value" }) {
     await exportFeaturesToExcel({ market: selectedMarket });
   };
 
+  const handleDeviceChange = useCallback((deviceId) => {
+    setFilters((current) => ({
+      ...current,
+      selectedDeviceId: deviceId,
+    }));
+  }, []);
+
+  const handleMarketChange = useCallback((market) => {
+    setFilters((current) => ({
+      ...current,
+      selectedMarket: market,
+    }));
+  }, []);
+
   return (
     <section className="panel page-panel feature-page">
       <div className="feature-toolbar">
@@ -791,12 +784,7 @@ export default function Features({ initialMarket = "Default value" }) {
           Appliance
           <select
             value={selectedDeviceId}
-            onChange={(e) =>
-              setFilters((current) => ({
-                ...current,
-                selectedDeviceId: e.target.value,
-              }))
-            }
+            onChange={(e) => handleDeviceChange(e.target.value)}
           >
             <option value="all">All appliances</option>
 
@@ -812,12 +800,7 @@ export default function Features({ initialMarket = "Default value" }) {
           Market
           <select
             value={selectedMarket}
-            onChange={(e) =>
-              setFilters((current) => ({
-                ...current,
-                selectedMarket: e.target.value,
-              }))
-            }
+            onChange={(e) => handleMarketChange(e.target.value)}
           >
             <option value="Default value">Default value</option>
 
@@ -861,13 +844,14 @@ export default function Features({ initialMarket = "Default value" }) {
                 />
               )}
         </div>
-
         <PhonePreview
           selectedDeviceId={selectedDeviceId}
           selectedDevice={selectedDevice}
           selectedMarket={selectedMarket}
           configsByDevice={configsByDevice}
           loadingDeviceIds={loadingDeviceIds}
+          onDeviceChange={handleDeviceChange}
+          onMarketChange={handleMarketChange}
         />
       </div>
     </section>
