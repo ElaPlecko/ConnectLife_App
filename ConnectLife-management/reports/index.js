@@ -106,7 +106,7 @@ async function sendReportToAdmin(email, date) {
 
 exports.dailyReport = onSchedule(
   {
-    schedule: "0 15 * * *",
+    schedule: "0 18 * * *",
     timeZone: "Europe/Ljubljana",
   },
   async () => {
