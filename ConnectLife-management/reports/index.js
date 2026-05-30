@@ -2,14 +2,18 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { setGlobalOptions } = require("firebase-functions");
-const fetch = require("node-fetch");
+const nodemailer = require("nodemailer");
 
 initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
-const EMAILJS_SERVICE_ID = "service_185kg2d";
-const EMAILJS_TEMPLATE_ID = "template_a3ss2c9";
-const EMAILJS_PUBLIC_KEY = "LQKk6-F2C6OmP49YF";
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "connectlife95@gmail.com",
+    pass: "zuvm objy xirz paf",
+  },
+});
 
 const MOCK_DATA = [
   { event_name: "user_engagement", event_count: 24022514, total_users: 1012397, category: "System" },
@@ -45,18 +49,20 @@ function buildReportHTML(date) {
       <div style="font-size:22px;font-weight:500;color:#fff;">Dnevno poročilo</div>
       <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">${date}</div>
     </div>
-    <div style="background:#f5f5f3;padding:20px 32px;display:flex;gap:12px;">
-      <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:4px;">Tipov dogodkov</div>
-        <div style="font-size:20px;font-weight:500;">${MOCK_DATA.length}</div>
-      </div>
-      <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:4px;">Skupaj klikov</div>
-        <div style="font-size:20px;font-weight:500;">${fmt(totalCount)}</div>
-      </div>
-      <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:4px;">Maks. uporabniki</div>
-        <div style="font-size:20px;font-weight:500;">${fmt(maxUsers)}</div>
+    <div style="background:#f5f5f3;padding:20px 32px;">
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:11px;color:#888;margin-bottom:4px;">Tipov dogodkov</div>
+          <div style="font-size:20px;font-weight:500;">${MOCK_DATA.length}</div>
+        </div>
+        <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:11px;color:#888;margin-bottom:4px;">Skupaj klikov</div>
+          <div style="font-size:20px;font-weight:500;">${fmt(totalCount)}</div>
+        </div>
+        <div style="flex:1;background:#fff;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:11px;color:#888;margin-bottom:4px;">Maks. uporabniki</div>
+          <div style="font-size:20px;font-weight:500;">${fmt(maxUsers)}</div>
+        </div>
       </div>
     </div>
     <div style="background:#fff;padding:24px 32px;">
@@ -80,33 +86,9 @@ function buildReportHTML(date) {
   </div>`;
 }
 
-async function sendReportToAdmin(email, date) {
-  const reportHTML = buildReportHTML(date);
-  const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      service_id: EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_ID,
-      user_id: EMAILJS_PUBLIC_KEY,
-      template_params: {
-        to_email: email,
-        subject: `ConnectLife — dnevno poročilo, ${date}`,
-        message: reportHTML,
-        from_name: "ConnectLife Analytics",
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`EmailJS napaka: ${text}`);
-  }
-}
-
 exports.dailyReport = onSchedule(
   {
-    schedule: "0 18 * * *",
+    schedule: "0 19 * * *",
     timeZone: "Europe/Ljubljana",
   },
   async () => {
@@ -125,9 +107,16 @@ exports.dailyReport = onSchedule(
       day: "numeric",
     });
 
+    const html = buildReportHTML(date);
+
     for (const email of admins) {
       try {
-        await sendReportToAdmin(email, date);
+        await transporter.sendMail({
+          from: '"ConnectLife Analytics" <connectlife95@gmail.com>',
+          to: email,
+          subject: `ConnectLife — dnevno poročilo, ${date}`,
+          html,
+        });
         console.log(`Poslano: ${email}`);
       } catch (e) {
         console.error(`Napaka za ${email}:`, e.message);
