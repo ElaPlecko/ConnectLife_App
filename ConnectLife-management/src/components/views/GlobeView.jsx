@@ -28,15 +28,16 @@ export default function GlobeView({ isDark, children }) {
           globeImageUrl={
             isDark
               ? "//unpkg.com/three-globe/example/img/earth-night.jpg"
-              : "//unpkg.com/three-globe/example/img/earth-day.jpg"
+              : "https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg"
           }
+          bumpImageUrl="https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-topology.png"
           showAtmosphere
           atmosphereColor={isDark ? "#1a6fa8" : "#a8d8ea"}
           atmosphereAltitude={0.15}
           pointsData={marketLocations}
           pointLat="lat"
           pointLng="lng"
-          pointColor={() => (isDark ? "#64c8ff" : "#730039")}
+          pointColor={() => (isDark ? "#64c8ff" : "#de4545")}
           pointRadius={0.35}
           pointAltitude={0.02}
         />
