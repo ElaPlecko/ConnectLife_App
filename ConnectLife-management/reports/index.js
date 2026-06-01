@@ -86,9 +86,9 @@ function buildReportHTML(date) {
   </div>`;
 }
 
-exports.dailyReport = onSchedule(
+exports.monthlyReport = onSchedule(
   {
-    schedule: "0 19 * * *",
+    schedule: "0 8 1 * *",
     timeZone: "Europe/Ljubljana",
   },
   async () => {
@@ -114,7 +114,7 @@ exports.dailyReport = onSchedule(
         await transporter.sendMail({
           from: '"ConnectLife Analytics" <connectlife95@gmail.com>',
           to: email,
-          subject: `ConnectLife — dnevno poročilo, ${date}`,
+          subject: `ConnectLife — mesečno poročilo, ${date}`,
           html,
         });
         console.log(`Poslano: ${email}`);
