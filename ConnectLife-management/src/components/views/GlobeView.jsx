@@ -38,8 +38,8 @@ export default function GlobeView({ isDark, children }) {
           pointLat="lat"
           pointLng="lng"
           pointColor={() => (isDark ? "#64c8ff" : "#de4545")}
-          pointRadius={0.35}
-          pointAltitude={0.02}
+          pointRadius={0.4}
+          pointAltitude={0.03}
         />
 
         <div className="globe-overlay">
