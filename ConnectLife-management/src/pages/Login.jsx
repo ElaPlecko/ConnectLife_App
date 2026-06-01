@@ -164,7 +164,7 @@ export default function Login() {
         }
 
         .right-panel {
-          background: #f8f7f4;
+          background: var(--page);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -185,14 +185,15 @@ export default function Login() {
           font-weight: 500;
         }
 
-        h2 {
+        .login-card h2 {
           font-family: 'DM Serif Display', serif;
           font-size: 30px;
           margin-bottom: 8px;
+          color: var(--ink);
         }
 
         .subtitle {
-          color: #888;
+          color: var(--muted);
           margin-bottom: 32px;
         }
 
@@ -203,10 +204,15 @@ export default function Login() {
         .input {
           width: 100%;
           padding: 14px;
-          border: 1px solid #ddd;
+          border: 1px solid var(--input-border);
           border-radius: 10px;
           font-size: 14px;
-          background: white;
+          background: var(--input-bg);
+          color: var(--ink);
+        }
+
+        .input::placeholder {
+          color: var(--muted);
         }
 
         .input:focus {
@@ -239,14 +245,14 @@ export default function Login() {
         .divider {
           text-align: center;
           margin: 20px 0;
-          color: #999;
+          color: var(--muted);
           font-size: 13px;
         }
 
         .google-btn {
-          background: white;
-          border: 1px solid #ddd;
-          color: #111;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          color: var(--ink);
         }
 
         .google-btn:hover {
@@ -267,10 +273,11 @@ export default function Login() {
           margin-top: 24px;
           padding: 14px;
           border-radius: 8px;
-          background: rgba(0,180,140,.06);
-          border: 1px solid rgba(0,180,140,.15);
+          background: var(--hisense-soft);
+          border: 1px solid rgba(0,180,140,.2);
           font-size: 12px;
           line-height: 1.6;
+          color: var(--muted);
         }
 
         @media (max-width:768px) {
@@ -355,13 +362,13 @@ export default function Login() {
             <div className="divider">or</div>
 
             <button
-            type="button"
-            className="google-btn"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            Continue with Google
-          </button>
+              type="button"
+              className="google-btn"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+            >
+              Continue with Google
+            </button>
 
             {error && (
               <div className="error-box">
