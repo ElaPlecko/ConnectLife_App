@@ -41,19 +41,24 @@ const COUNTRY_COORDS = {
 };
 
 function getMarketLocations() {
-  const seen = new Set();
-  const locations = [];
+  const countryToConditions = new Map();
 
   REMOTE_CONFIG_CONDITIONS.forEach(condition => {
     condition.countries?.forEach(country => {
-      if (seen.has(country)) return;
-      seen.add(country);
-      const coords = COUNTRY_COORDS[country];
-      if (coords) locations.push({ ...coords, label: country });
+      if (!countryToConditions.has(country)) {
+        countryToConditions.set(country, new Set());
+      }
+      countryToConditions.get(country).add(condition.label);
     });
   });
 
-  return locations;
+  return Array.from(countryToConditions.entries())
+    .filter(([country]) => COUNTRY_COORDS[country])
+    .map(([country, conditionSet]) => ({
+      ...COUNTRY_COORDS[country],
+      label: country,
+      conditions: Array.from(conditionSet),
+    }));
 }
 
 export const marketLocations = getMarketLocations();

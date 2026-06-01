@@ -30,50 +30,93 @@ function MarketsSkeleton() {
   );
 }
 
-// ↓ SPREMEMBA: dobi onNavigate prop
 export function Markets({ currentUserRole, isDark, onNavigate }) {
   const { conditions, loading, error } = useRemoteConfigConditions();
+  const [hoveredCondition, setHoveredCondition] = useState(null);
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
-  const rows = conditions.map((condition) => (
-    <tr key={condition.label}>
-      <td><strong>{condition.label}</strong></td>
-      <td>{condition.countries?.join(", ")}</td>
-      <td>{condition.platform || "All"}</td>
-      <td>
-        <button
-          className="text-link"
-          type="button"
-          onClick={() => onNavigate("features", condition.label)}
-        >
-          View features →
-        </button>
-      </td>
-    </tr>
-  ));
+  const toggleExpanded = (label) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+  };
+
+  const rows = conditions.map((condition) => {
+    const isExpanded = expandedRows.has(condition.label);
+    const countries = condition.countries ?? [];
+    const needsToggle = countries.length > 4;
+    const countryText = countries.join(", ");
+
+    return (
+      <tr
+        key={condition.label}
+        onMouseEnter={() => setHoveredCondition(condition.label)}
+        onMouseLeave={() => setHoveredCondition(null)}
+        style={{
+          background: hoveredCondition === condition.label
+            ? "var(--color-background-secondary)"
+            : undefined,
+          cursor: "default",
+          transition: "background 0.15s",
+        }}
+      >
+        <td><strong>{condition.label}</strong></td>
+        <td>
+          <div
+            style={
+              needsToggle && !isExpanded
+                ? {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    fontSize: 12,
+                    color: "var(--color-text-secondary)",
+                  }
+                : { fontSize: 12, color: "var(--color-text-secondary)" }
+            }
+          >
+            {countryText}
+          </div>
+          {needsToggle && (
+            <button
+              type="button"
+              className="text-link"
+              style={{ fontSize: 11, marginTop: 2 }}
+              onClick={() => toggleExpanded(condition.label)}
+            >
+              {isExpanded ? "↑ show less" : `+ ${countries.length - 4} more`}
+            </button>
+          )}
+        </td>
+        <td>{condition.platform || "All"}</td>
+        <td>
+          <button
+            className="text-link"
+            type="button"
+            onClick={() => onNavigate("features", condition.label)}
+          >
+            View features →
+          </button>
+        </td>
+      </tr>
+    );
+  });
 
   return (
-  <SimplePanel title="Markets">
-    <GlobeView isDark={isDark}>
-      {loading && <MarketsSkeleton />}
-
-      {error && (
-        <div className="feature-error">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <Table
-          headers={[
-            "Condition",
-            "Countries",
-            "Platform",
-            "",
-          ]}
-          rows={rows}
-        />
-      )}
-    </GlobeView>
-  </SimplePanel>
-);
+    <SimplePanel title="Markets">
+      <GlobeView isDark={isDark} hoveredCondition={hoveredCondition}>
+        {loading && <MarketsSkeleton />}
+        {error && <div className="feature-error">{error}</div>}
+        {!loading && !error && (
+          <Table
+            headers={["Condition", "Countries", "Platform", ""]}
+            rows={rows}
+          />
+        )}
+      </GlobeView>
+    </SimplePanel>
+  );
 }
