@@ -1,54 +1,68 @@
-# ConnectLife Management App Portal
+# ConnectLife Management Portal
 
-**UVOD**
+## Uvod
 
-Cilj projekta je vzpostaviti lahek, a robusten sistem, ki ekipi omogoča hitro prilagoditev tega, kaj je v aplikaciji prikazano in aktivno na posameznem trgu — brez potrebe po novi izdaji aplikacije.
+ConnectLife Management Portal je interno spletno orodje, namenjeno zaposlenim v podjetju Hisense Europe za upravljanje konfiguracij, funkcionalnosti in vsebin aplikacije ConnectLife na različnih trgih.
 
-**OPIS PROBLEMA**
+Namen sistema je omogočiti centralizirano upravljanje podatkov, ki vplivajo na delovanje mobilne aplikacije ConnectLife, brez potrebe po spremembah izvorne kode ali novi izdaji aplikacije.
 
-ConnectLife aplikacija deluje na več trgih (državah/segmentih) z različnimi poslovnimi pravili, podprtimi funkcijami in vsebinami. Trenutna situacija zahteva novo izdajo aplikacije vsakič, ko želi ekipa spremeniti:
+Dashboard omogoča hitro prilagajanje funkcionalnosti in vsebin posameznim trgom ter poenostavlja procese upravljanja konfiguracij znotraj organizacije.
 
-•	katere funkcije so aktivne za določen trg (npr. voice control, self-diagnostics, shopping list, WashDry sync)
+---
 
-•	vsebino FAQ, "Suggestions & ideas", receptov, člankov in nasvetov po trgu
+## Opis problema
 
-•	zunanje povezave (npr. webshop linki) specifične za trg
+Aplikacija ConnectLife je prisotna na različnih trgih po svetu, kjer se lahko razlikujejo podprte funkcionalnosti, vsebine in poslovna pravila.
 
-To povzroča zamude, operativne stroške in tveganje neskladij med tem, kar aplikacija prikazuje, in tem, kar je dejansko na voljo na trgu.
+Spremembe konfiguracij pogosto zahtevajo sodelovanje razvojne ekipe in novo izdajo aplikacije, kar podaljšuje čas implementacije ter povečuje stroške vzdrževanja.
 
-**OBSEG**
+Zaradi tega je bila razvita spletna aplikacija ConnectLife Management Portal, ki zaposlenim omogoča samostojno upravljanje konfiguracij in vsebin preko centraliziranega uporabniškega vmesnika.
 
-•	Spletni (web) admin portal z avtentikacijo za ConnectLife Manager
+---
 
-•	Kreiranje/urejanje trgov in segmentov ter njihovih nastavitev
+## Namen sistema
 
-•	Feature gating: vklop/izklop funkcij po trgu (voice control, self-diagnostics, shopping list, WashDry sync, ...)
+Sistem je namenjen zaposlenim v podjetju Hisense Europe za:
 
-•	Upravljanje vsebin: FAQ, Suggestions & ideas, recepti, članki/tips po trgu
+* upravljanje trgov in njihovih nastavitev,
+* upravljanje funkcionalnosti aplikacije ConnectLife,
+* urejanje vsebin, prikazanih uporabnikom,
+* primerjavo konfiguracij med različnimi trgi,
+* pregled in upravljanje uporabnikov sistema.
 
-•	Upravljanje zunanjih linkov (webshop, support linki) per market
+---
 
-•	Config API (REST/JSON) — endpoint za mobilno aplikacijo
+## Ključne funkcionalnosti
 
-•	Demo pogled: side-by-side primerjava dveh trgov (Trg A vs Trg B)
+### Upravljanje trgov
 
-•	POC koncept samodejne izbire trga: demo ideje "redirect po IP/državi"
+Omogoča ustvarjanje, urejanje in konfiguracijo posameznih trgov ter določanje tržno specifičnih nastavitev.
 
-**ARHITEKTURA**
+### Upravljanje funkcionalnosti
 
-Rešitev temelji na lahki tri-nivojski arhitekturi (3-tier), prilagojeni za POC obseg.
+Omogoča aktivacijo oziroma deaktivacijo funkcionalnosti aplikacije ConnectLife za posamezne trge.
 
-Layer 1 — Admin Portal (Frontend): React SPA, dostopen internemu osebju
+### Primerjava trgov
 
-Layer 2 — Backend API (Node.js / Python FastAPI): REST API za CRUD operacije in config generiranje
+Primerjalni pogled omogoča pregled razlik med konfiguracijami dveh izbranih trgov.
 
-Layer 3 — Data Store: PostgreSQL za konfiguracije + optional S3/blob storage za JSON config file serving
+### Upravljanje uporabnikov
 
-Config Delivery: JSON config endpoint, ki ga ConnectLife app pobere ob zagonu (ali periodično)
+Administracija uporabniških računov in dostopov do sistema.
 
-**DEPLOYMENT IN INFRASTRUKTURA**
+---
 
-Vse komponente (frontend, backend, PostgreSQL) bodo v Docker containerjih na enem strežniku. 
+## Tehnologije
 
+### Frontend
 
+* React
+* Vite
+* Material UI
 
+### Backend in infrastruktura
+
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Cloud Functions
+* Firebase Hosting
