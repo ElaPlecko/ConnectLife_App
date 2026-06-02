@@ -5,18 +5,44 @@ import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices.js";
 import { iconSvg, Table } from "../../utils/helpers.jsx";
 import { motion } from "framer-motion";
 import { Chart, registerables } from "chart.js";
+import ChatBot from "./ChatBot.jsx";
 Chart.register(...registerables);
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   name: condition.label,
-  code:
-    condition.countries?.[0]
-      ?.slice(0, 2)
-      .toUpperCase() || "-",
+  code: condition.countries?.[0]?.slice(0, 2).toUpperCase() || "-",
   segments: condition.platform || "All",
   status: "Active",
   updated: "Today",
 }));
+
+function buildFeatureData() {
+  const result = {};
+  for (const device of REMOTE_CONFIG_DEVICES) {
+    const appId = device.id;
+    result[appId] = {};
+    for (const key of (device.remoteKeys || []).filter((k) => k.type === "boolean")) {
+      result[appId][key.label] = {};
+      for (const market of markets) {
+        const condition = key.conditions?.find((c) => c.label === market.name);
+        result[appId][key.label][market.name] = condition ? condition.value : true;
+      }
+    }
+  }
+  return result;
+}
+
+  const allFeatureNames = [
+    ...new Set(
+      REMOTE_CONFIG_DEVICES.flatMap((d) =>
+        (d.remoteKeys || [])
+          .filter((k) => k.type === "boolean")
+          .map((k) => k.label)
+      )
+    ),
+  ];
+
+const allMarketNames = markets.map((m) => m.name);
 
 function AnimatedNumber({ value }) {
   const [current, setCurrent] = useState(0);
@@ -217,7 +243,65 @@ function RecentAuditLog() {
   );
 }
 
-export default function Dashboard({ onNavigate, currentUserRole }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard
+// ─────────────────────────────────────────────────────────────────────────────
+export default function Dashboard({ onNavigate, currentUserRole, currentUserEmail }) {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // Live featureData – starts from static config, gets updated on chatbot changes
+  const [featureData, setFeatureData] = useState(buildFeatureData);
+
+  // ── Firebase write + local state sync ────────────────────────────────────
+  async function handleExecuteAction({ applianceId, feature, market, value }) {
+    // 1. Optimistic local update so UI reflects change immediately
+    setFeatureData((prev) => ({
+      ...prev,
+      [applianceId]: {
+        ...prev[applianceId],
+        [feature]: {
+          ...prev[applianceId]?.[feature],
+          [market]: value,
+        },
+      },
+    }));
+
+    // 2. Persist to Firebase
+    try {
+      const { doc, setDoc, serverTimestamp, collection, addDoc } =
+        await import("firebase/firestore");
+      const { db } = await import("../../firebase");
+
+      // Update the device feature document
+      // Adjust the Firestore path to match your actual data model:
+      //   remoteConfigDevices/{applianceId}/features/{feature}
+      const featureRef = doc(
+        db,
+        "remoteConfigDevices",
+        applianceId,
+        "features",
+        feature
+      );
+      await setDoc(
+        featureRef,
+        { markets: { [market]: value } },
+        { merge: true }
+      );
+
+      // Write audit log entry
+      await addDoc(collection(db, "auditLogs"), {
+        action: `Feature ${value ? "enabled" : "disabled"}`,
+        details: `${feature} → ${market}: ${value}`,
+        userEmail: currentUserEmail || "unknown",
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      // Roll back optimistic update on failure
+      setFeatureData(buildFeatureData());
+      throw err; // re-throw so ChatBot can show the error message
+    }
+  }
+
   return (
     <>
       <StatCards onNavigate={onNavigate} />
@@ -278,6 +362,27 @@ export default function Dashboard({ onNavigate, currentUserRole }) {
           </button>
         </section>
       </div>
+
+      {/* ── Chat FAB ─────────────────────────────────────────────────────── */}
+      <button
+        className="chat-fab"
+        onClick={() => setChatOpen((o) => !o)}
+        aria-label="Open AI assistant"
+        title="ConnectLife Assistant"
+      >
+        🤖
+      </button>
+
+      {/* ── Chat window ──────────────────────────────────────────────────── */}
+      {chatOpen && (
+        <ChatBot
+          availableMarkets={allMarketNames}
+          availableFeatures={allFeatureNames}
+          featureData={featureData}
+          onExecuteAction={handleExecuteAction}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
 
       <footer className="footer">
         <span>ConnectLife App Management Portal</span>
