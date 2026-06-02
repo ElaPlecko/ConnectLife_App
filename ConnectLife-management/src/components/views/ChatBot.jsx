@@ -101,67 +101,104 @@ export default function ChatBot({
     setInput("");
     setLoading(true);
 
-    setTimeout(() => {
-      const parsed = parseMessage(text);
+setTimeout(async () => {
+  try {
+    const response = await fetch(
+      "https://us-central1-connectlife-admin-dev.cloudfunctions.net/chatAssistant",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+          markets: availableMarkets,
+          features: availableFeatures,
+        }),
+      }
+    );
 
-      if (parsed.type === "query") {
-        const response = buildQueryResponse(parsed.market);
-        setMessages((prev) => [...prev, { role: "bot", text: response }]);
+    const data = await response.json();
 
-      } else if (parsed.type === "action") {
-        const currentValue = parsed.applianceId
-          ? featureData?.[parsed.applianceId]?.[parsed.feature]?.[parsed.market]
-          : null;
+    console.log("AI RESPONSE:", data);
 
-        const alreadySet =
-          currentValue !== null && currentValue !== undefined && currentValue === parsed.value;
+    const parsed = parseMessage(text);
 
-        if (alreadySet) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "bot",
-              text: `ℹ️ Feature **${parsed.feature}** is already ${parsed.action === "enable" ? "enabled" : "disabled"} for **${parsed.market}**.`,
-            },
-          ]);
-        } else {
-          setPendingAction(parsed);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "bot",
-              text: `Found feature **${parsed.feature}** for market **${parsed.market}**${parsed.applianceId ? ` (${parsed.applianceId})` : ""}.\n\nDo you want to **${parsed.action === "disable" ? "disable" : "enable"}** it?`,
-            },
-          ]);
-        }
+    if (parsed.type === "query") {
+      const response = buildQueryResponse(parsed.market);
+      setMessages((prev) => [...prev, { role: "bot", text: response }]);
 
-      } else if (parsed.type === "missing") {
-        const hints = {
-          "market and feature": `Please specify a market (e.g. ${availableMarkets.slice(0, 3).join(", ")}) and a feature (e.g. ${availableFeatures.slice(0, 3).join(", ")}).`,
-          market: `Which market? Available: ${availableMarkets.join(", ")}.`,
-          feature: `Which feature? Available: ${availableFeatures.join(", ")}.`,
-        };
+    } else if (parsed.type === "action") {
+      const currentValue = parsed.applianceId
+        ? featureData?.[parsed.applianceId]?.[parsed.feature]?.[parsed.market]
+        : null;
+
+      const alreadySet =
+        currentValue !== null &&
+        currentValue !== undefined &&
+        currentValue === parsed.value;
+
+      if (alreadySet) {
         setMessages((prev) => [
           ...prev,
           {
             role: "bot",
-            text: `I didn't understand the request. ${hints[parsed.missing] || "Please try again."}`,
+            text: `ℹ️ Feature **${parsed.feature}** is already ${
+              parsed.action === "enable" ? "enabled" : "disabled"
+            } for **${parsed.market}**.`,
           },
         ]);
-
       } else {
+        setPendingAction(parsed);
         setMessages((prev) => [
           ...prev,
           {
             role: "bot",
-            text: `I didn't understand. Try:\n• "Disable [feature] for [appliance] in [market]"\n• "Enable [feature] in [market]"\n• "Show all features for [market]"`,
+            text: `Found feature **${parsed.feature}** for market **${parsed.market}**${
+              parsed.applianceId ? ` (${parsed.applianceId})` : ""
+            }.\n\nDo you want to **${
+              parsed.action === "disable" ? "disable" : "enable"
+            }** it?`,
           },
         ]);
       }
 
-      setLoading(false);
-    }, 400);
+    } else if (parsed.type === "missing") {
+      const hints = {
+        "market and feature": `Please specify a market (e.g. ${availableMarkets
+          .slice(0, 3)
+          .join(", ")}) and a feature (e.g. ${availableFeatures
+          .slice(0, 3)
+          .join(", ")}).`,
+        market: `Which market? Available: ${availableMarkets.join(", ")}.`,
+        feature: `Which feature? Available: ${availableFeatures.join(", ")}.`,
+      };
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: `I didn't understand the request. ${
+            hints[parsed.missing] || "Please try again."
+          }`,
+        },
+      ]);
+
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: `I didn't understand. Try:\n• "Disable [feature] for [appliance] in [market]"\n• "Enable [feature] in [market]"\n• "Show all features for [market]"`,
+        },
+      ]);
+    }
+  } catch (err) {
+    console.error("CHATBOT ERROR:", err);
+  } finally {
+    setLoading(false);
   }
+}, 400);}
 
   async function confirmAction() {
     if (!pendingAction) return;
