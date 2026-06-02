@@ -1,6 +1,6 @@
-const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const { GoogleGenAI } = require("@google/genai");
+const { onRequest, onCall } = require("firebase-functions/v2/https");
 const cors = require("cors")({
   origin: true,
 });
@@ -80,64 +80,39 @@ exports.updateRemoteFeatureHttp = onRequest(async (req, res) => {
   });
 });
 
-exports.chatAssistant = onRequest(
+exports.chatAssistant = onCall(
   {
     secrets: ["GEMINI_API_KEY"],
   },
-  async (req, res) => {
-    cors(req, res, async () => {
-      try {
-        if (req.method === "OPTIONS") {
-          return res.status(204).send("");
-        }
+  async (request) => {
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
 
-        const ai = new GoogleGenAI({
-          apiKey: process.env.GEMINI_API_KEY,
-        });
+    const { message, markets, features } = request.data;
 
-        const { message, markets, features } = req.body;
+    const prompt = `
+    You are a ConnectLife dashboard assistant.
 
-        const prompt = `
-You are a ConnectLife dashboard assistant.
+    Markets:
+    ${markets.join(", ")}
 
-Markets:
-${markets.join(", ")}
+    Features:
+    ${features.join(", ")}
 
-Features:
-${features.join(", ")}
+    Return ONLY JSON.
 
-Return ONLY JSON.
-
-Example:
-
-{
-  "intent":"action",
-  "action":"disable",
-  "feature":"Recipes",
-  "market":"US"
-}
-
-User message:
-${message}
-`;
+    User message:
+    ${message}
+    `;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
         });
 
-        return res.json({
-          success: true,
+        return {
           result: response.text,
-        });
-      } catch (err) {
-        console.error(err);
-
-        return res.status(500).json({
-          success: false,
-          error: err.message,
-        });
-      }
-    });
+        };
   }
 );
