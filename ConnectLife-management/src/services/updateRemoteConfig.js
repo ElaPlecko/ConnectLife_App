@@ -1,5 +1,7 @@
-const UPDATE_REMOTE_FEATURE_URL =
-  "https://us-central1-connectlife-admin-dev.cloudfunctions.net/updateRemoteFeatureHttp";
+const FIREBASE_PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const UPDATE_REMOTE_FEATURE_URL = FIREBASE_PROJECT_ID
+  ? `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net/updateRemoteFeatureHttp`
+  : "https://us-central1-connectlife-admin-dev.cloudfunctions.net/updateRemoteFeatureHttp";
 
 export async function updateRemoteFeature({
   parameterKey,
@@ -8,8 +10,7 @@ export async function updateRemoteFeature({
   value,
   modelKey,
   conditionKey,
-})
-{
+}) {
   const response = await fetch(UPDATE_REMOTE_FEATURE_URL, {
     method: "POST",
     headers: {

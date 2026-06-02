@@ -10,6 +10,7 @@ export default function ChatBot({
   featureData = {},
   onExecuteAction,
   onClose,
+  userEmail,
 }) {
   const [messages, setMessages] = useState([
     {
@@ -27,13 +28,53 @@ export default function ChatBot({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  function normalizeText(text) {
+    return text
+      .toLowerCase()
+      .replace(/[-_/]/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function findMatch(text, options) {
     const lower = text.toLowerCase();
     const exact = options.find((o) => lower.includes(o.toLowerCase()));
     if (exact) return exact;
-    return options.find((o) =>
-      o.length >= 4 && lower.includes(o.slice(0, 4).toLowerCase())
-    ) || null;
+
+    const normalizedText = normalizeText(text);
+    const textWords = new Set(
+      normalizedText
+        .split(" ")
+        .filter((word) => word.length >= 3)
+    );
+
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (const option of options) {
+      const optionWords = normalizeText(option)
+        .split(" ")
+        .filter((word) => word.length >= 3);
+
+      const score = optionWords.reduce(
+        (count, word) => count + (textWords.has(word) ? 1 : 0),
+        0
+      );
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = option;
+      }
+    }
+
+    if (bestScore > 0) return bestMatch;
+
+    return (
+      options.find((o) =>
+        o.length >= 4 && lower.includes(o.slice(0, 4).toLowerCase())
+      ) || null
+    );
   }
 
   function parseMessage(message) {
@@ -49,7 +90,7 @@ export default function ChatBot({
         lower.includes("for all") ||
         lower.includes("za vse") ||
         lower.includes("privzeto") ||
-        lower.include("default market")
+        lower.includes("default market")
       ) {
         market = "Default value";
       }
@@ -68,6 +109,7 @@ export default function ChatBot({
     if (!action) return { type: "unknown" };
 
     const market = findMatch(message, availableMarkets);
+    
     const feature = findMatch(message, availableFeatures);
 
     if (!market && !feature)
@@ -134,38 +176,30 @@ export default function ChatBot({
         setMessages((prev) => [...prev, { role: "bot", text: response }]);
 
       } else if (parsed.type === "action") {
-        const currentValue = parsed.applianceId
-          ? featureData?.[parsed.applianceId]?.[parsed.feature]?.[parsed.market]
-          : null;
-
-        const alreadySet =
-          currentValue !== null &&
-          currentValue !== undefined &&
-          currentValue === parsed.value;
-
-        if (alreadySet) {
+        // Always execute action, even if local featureData state may be stale.
+        setLoading(true);
+        try {
+          await onExecuteAction({
+            ...parsed,
+            fromChatBot: true,
+          });
           setMessages((prev) => [
             ...prev,
             {
               role: "bot",
-              text: `ℹ️ Feature **${parsed.feature}** is already ${
-                parsed.action === "enable" ? "enabled" : "disabled"
-              } for **${parsed.market}**.`,
+              text: `✅ Feature **${parsed.feature}** was successfully ${parsed.action === "disable" ? "disabled" : "enabled"} for market **${parsed.market}**.`,
             },
           ]);
-        } else {
-          setPendingAction(parsed);
+        } catch (err) {
           setMessages((prev) => [
             ...prev,
             {
               role: "bot",
-              text: `Found feature **${parsed.feature}** for market **${parsed.market}**${
-                parsed.applianceId ? ` (${parsed.applianceId})` : ""
-              }.\n\nDo you want to **${
-                parsed.action === "disable" ? "disable" : "enable"
-              }** it?`,
+              text: `❌ Error: ${err.message}`,
             },
           ]);
+        } finally {
+          setLoading(false);
         }
 
       } else if (parsed.type === "missing") {
@@ -287,8 +321,8 @@ export default function ChatBot({
         <div ref={bottomRef} />
       </div>
 
-      {/* Confirm / Cancel buttons */}
-      {pendingAction && (
+      {/* Confirm / Cancel buttons - No longer needed with auto-execute */}
+      {/* {pendingAction && (
         <div className="chat-confirm">
           <button className="confirm-yes" onClick={confirmAction} disabled={loading}>
             ✅ Yes, execute
@@ -297,7 +331,7 @@ export default function ChatBot({
             ❌ No, cancel
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Input */}
       <div className="chat-input">

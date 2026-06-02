@@ -573,6 +573,7 @@ function ApplianceSection({
         setError("");
         onLoadingChange?.(appliance.id, true);
 
+        // ✅ OSVEŽAVANJE: Uvek osvežavamo Firebase podatke pre nego što učitamo
         await fetchAndActivate(remoteConfig);
 
         const loadedConfigs = [];
@@ -763,7 +764,31 @@ function ApplianceSection({
   });
   const [configsByDevice, setConfigsByDevice] = useState({});
   const [loadingDeviceIds, setLoadingDeviceIds] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0); // ✅ Forsira re-render
   const markets = getAvailableMarkets();
+
+  // ✅ OSVEŽAVANJE: Na početku, osvežavamo Firebase podatke
+  useEffect(() => {
+    async function refreshRemoteConfig() {
+      try {
+        await fetchAndActivate(remoteConfig);
+        setRefreshKey((prev) => prev + 1);
+      } catch (err) {
+        console.error("Failed to refresh Firebase:", err);
+      }
+    }
+
+    refreshRemoteConfig();
+
+    const handleExternalUpdate = () => {
+      refreshRemoteConfig();
+    };
+
+    window.addEventListener("connectlifeRemoteConfigUpdated", handleExternalUpdate);
+    return () => {
+      window.removeEventListener("connectlifeRemoteConfigUpdated", handleExternalUpdate);
+    };
+  }, []);
 
   if (filters.initialMarket !== initialMarket) {
     setFilters({
@@ -863,7 +888,7 @@ function ApplianceSection({
           {selectedDeviceId === "all"
             ? REMOTE_CONFIG_DEVICES.map((device) => (
                 <ApplianceSection
-                  key={device.id}
+                  key={`${device.id}-${refreshKey}`}
                   appliance={device}
                   selectedMarket={selectedMarket}
                   cachedConfigs={configsByDevice[device.id] ?? []}
@@ -874,6 +899,7 @@ function ApplianceSection({
               ))
             : selectedDevice && (
                 <ApplianceSection
+                  key={`${selectedDevice.id}-${refreshKey}`}
                   appliance={selectedDevice}
                   selectedMarket={selectedMarket}
                   cachedConfigs={configsByDevice[selectedDevice.id] ?? []}

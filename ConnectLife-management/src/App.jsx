@@ -70,7 +70,13 @@ function Portal() {
   };
 
   const views = {
-    dashboard: <Dashboard onNavigate={handleNavigate} />,
+    dashboard: (
+      <Dashboard
+        onNavigate={handleNavigate}
+        currentUserEmail={currentUser?.email || currentUser?.providerData?.[0]?.email || "unknown"}
+        currentUserRole={currentUserRole}
+      />
+    ),
 
     // ↓ SPREMEMBA: Markets dobi onNavigate
     markets: (

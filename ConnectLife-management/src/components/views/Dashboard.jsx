@@ -8,7 +8,28 @@ import { Chart, registerables } from "chart.js";
 import ChatBot from "./ChatBot.jsx";
 import { Icon } from "@iconify/react";
 import { updateRemoteFeature } from "../../services/updateRemoteConfig";
+import { logAction } from "../../utils/auditLog";
+import { fetchAndActivate } from "firebase/remote-config";
+import { remoteConfig as appRemoteConfig } from "../../firebase";
 Chart.register(...registerables);
+
+const WASHER_DRYER_JSON_FEATURE_MAP = {
+  CL_VS_WashingMachine_WashingAssist: {
+    parameterKey: "CL_VS_Device_WashinMachine",
+    configKey: "deviceWashingMachine",
+    featureKey: "washingAssist",
+  },
+  CL_VS_Dryer_DryingAssist: {
+    parameterKey: "CL_VS_Device_TumbleDryer",
+    configKey: "deviceTumbleDryer",
+    featureKey: "dryingAssist",
+  },
+  CL_VS_WashingMachineAndDryer_WashDrySync: {
+    parameterKey: "CL_VS_Device_TumbleDryer",
+    configKey: "deviceTumbleDryer",
+    featureKey: "washDrySync",
+  },
+};
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
   name: condition.label,
@@ -292,7 +313,7 @@ export default function Dashboard({ onNavigate, currentUserRole, currentUserEmai
   const [featureData, setFeatureData] = useState(buildFeatureData);
 
   // ── Firebase write + local state sync ────────────────────────────────────
-  async function handleExecuteAction({ applianceId, feature, market, value }) {
+  async function handleExecuteAction({ applianceId, feature, market, value, fromChatBot = false }) {
     const device = REMOTE_CONFIG_DEVICES.find((d) => d.id === applianceId);
 
     if (!device) {
@@ -309,13 +330,55 @@ export default function Dashboard({ onNavigate, currentUserRole, currentUserEmai
       throw new Error(`Feature "${feature}" was not found in ${device.name}.`);
     }
 
-    await updateRemoteFeature({
+    let updatePayload = {
       parameterKey: remoteKey.key,
       configKey: remoteKey.configKey,
       featureKey: remoteKey.featureKey ?? remoteKey.key,
       value,
       conditionKey: market !== "Default value" ? market : undefined,
+    };
+
+    if (
+      device.specialParser === "washerDryer" &&
+      WASHER_DRYER_JSON_FEATURE_MAP[remoteKey.key]
+    ) {
+      const mapping = WASHER_DRYER_JSON_FEATURE_MAP[remoteKey.key];
+      updatePayload = {
+        parameterKey: mapping.parameterKey,
+        configKey: mapping.configKey,
+        featureKey: mapping.featureKey,
+        value,
+        conditionKey: undefined,
+      };
+    }
+
+    try {
+      await updateRemoteFeature(updatePayload);
+    } catch (err) {
+      console.error("Firebase update error:", err);
+      throw err;
+    }
+
+    // Log to audit log
+    const action = value ? "enabled" : "disabled";
+    const source = fromChatBot ? " (ChatBot)" : "";
+    const userEmailForLog = currentUserEmail || "unknown@system";
+    
+    await logAction({
+      userEmail: userEmailForLog,
+      action: `Feature updated${source}`,
+      details: `${action} ${feature} for ${device.name} in ${market}`,
     });
+
+    try {
+      await fetchAndActivate(appRemoteConfig);
+    } catch (err) {
+      console.error("Failed to refresh app remote config after update:", err);
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("connectlifeRemoteConfigUpdated"));
+    }
 
     setFeatureData((prev) => ({
       ...prev,
@@ -408,6 +471,7 @@ export default function Dashboard({ onNavigate, currentUserRole, currentUserEmai
           featureData={featureData}
           onExecuteAction={handleExecuteAction}
           onClose={() => setChatOpen(false)}
+          userEmail={currentUserEmail}
         />
       )}
 
