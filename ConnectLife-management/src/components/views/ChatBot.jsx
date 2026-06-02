@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
+import { functions } from "../../firebase";
 const chatAssistant = httpsCallable(functions, "chatAssistant");
 
 export default function ChatBot({
