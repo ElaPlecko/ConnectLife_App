@@ -6,6 +6,7 @@ import { iconSvg, Table } from "../../utils/helpers.jsx";
 import { motion } from "framer-motion";
 import { Chart, registerables } from "chart.js";
 import ChatBot from "./ChatBot.jsx";
+import { Icon } from "@iconify/react";
 Chart.register(...registerables);
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
@@ -175,31 +176,68 @@ function EventsChart() {
 
 function ApplianceSummary() {
   const headers = ["Appliance", ...markets.map((m) => m.name)];
+
   const rows = appliances.map((appliance) => {
     const featureList = Object.keys(appliance.features);
+
     return (
       <tr key={appliance.id}>
         <td>
-          <span className="content-type">
+  <span className="content-type">
+    {(() => {
+      const device = REMOTE_CONFIG_DEVICES.find(
+        (d) =>
+          d.name.toLowerCase() === appliance.name.toLowerCase() ||
+          (appliance.name === "Fridge" && d.id === "refrigerator") ||
+          (appliance.name === "Washing Machine" && d.id === "washerDryer") ||
+          (appliance.name === "Dryer" && d.id === "washerDryer")
+      );
+
+      return (
+        <>
+          {device ? (
+            <Icon
+              icon={device.icon}
+              className="dashboard-device-icon"
+            />
+          ) : (
             <span className="mini-icon appliance-icon" />
-            <span>
-              <strong>{appliance.name}</strong>
-              <small>{appliance.category}</small>
-            </span>
+          )}
+
+          <span>
+            <strong>{appliance.name}</strong>
+            <small>{appliance.category}</small>
           </span>
-        </td>
+        </>
+      );
+    })()}
+  </span>
+</td>
+
         {markets.map((market) => {
-          const activeCount = featureList.filter((f) => appliance.features[f][market.name]).length;
+          const activeCount = featureList.filter(
+            (f) => appliance.features[f][market.name]
+          ).length;
+
           return (
             <td key={market.name}>
-              <span className="score-pill">{activeCount}/{featureList.length}</span>
+              <span className="score-pill">
+                {activeCount}/{featureList.length}
+              </span>
             </td>
           );
         })}
       </tr>
     );
   });
-  return <Table headers={headers} rows={rows} minWidth={620} />;
+
+  return (
+    <Table
+      headers={headers}
+      rows={rows}
+      minWidth={620}
+    />
+  );
 }
 
 function RecentAuditLog() {

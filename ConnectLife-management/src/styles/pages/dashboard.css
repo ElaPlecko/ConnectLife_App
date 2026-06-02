@@ -385,3 +385,8 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.dashboard-device-icon {
+  font-size: 52px;
+  color: #17b5b2;
+  flex-shrink: 0;
+}
