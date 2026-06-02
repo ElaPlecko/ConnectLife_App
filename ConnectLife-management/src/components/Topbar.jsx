@@ -1,16 +1,3 @@
-/*export default function Topbar({ onNavigate }) {
-  return (
-    <header className="topbar">
-      <h1>ConnectLife App Management Portal (POC)</h1>
-      <div className="user-tools">
-        <button className="icon-button" type="button" aria-label="Help">?</button>
-        <button className="login-button" type="button" onClick={() => onNavigate("login")}>
-          Logout
-        </button>
-      </div>
-    </header>
-  );
-}*/
 import { useState, useRef, useEffect } from "react";
 
 const SEARCH_INDEX = [
@@ -85,7 +72,7 @@ export default function Topbar({ onNavigate, theme }) {
 
   return (
     <header className="topbar">
-      <h1>ConnectLife App Management Portal (POC)</h1>
+      <h1>ConnectLife App Management Portal</h1>
 
       <div ref={wrapRef} style={{ position: "relative", flex: 1, maxWidth: 320, margin: "0 1rem" }}>
         <input

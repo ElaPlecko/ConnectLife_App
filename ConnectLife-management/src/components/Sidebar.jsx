@@ -16,7 +16,7 @@ export default function Sidebar({ currentView, onNavigate, theme, setTheme, curr
         <img src="/connectlife_logo.png" alt="ConnectLife" style={{ height: "3rem" }} />
           <div>
             <strong>ConnectLife</strong>
-            <small>Manager</small>
+            <small>Management</small>
           </div>
       </div>
 
@@ -58,15 +58,6 @@ export default function Sidebar({ currentView, onNavigate, theme, setTheme, curr
         </>
       )}
           </nav>
-
-      <div className="environment">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8h.01M11 12h1v5h1" />
-        </svg>
-        <strong>POC environment</strong>
-        <span>This is a proof of concept and not a production system.</span>
-      </div>
     </aside>
   );
 }

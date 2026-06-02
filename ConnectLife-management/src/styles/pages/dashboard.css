@@ -1,6 +1,6 @@
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  grid-template-columns: repeat(3, minmax(210px, 1fr));
   gap: 24px;
   align-items: stretch;
 }

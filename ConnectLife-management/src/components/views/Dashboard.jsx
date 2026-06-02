@@ -40,14 +40,11 @@ function AnimatedNumber({ value }) {
   return current;
 }
 
-const linkKeys = ["Support", "Warranty", "Shop"];
-
 function StatCards({ onNavigate }) {
   const stats = [
     ["globe", markets.length.toString(), "Markets", "markets"],
     ["sliders", REMOTE_CONFIG_DEVICES.length.toString(), "Appliance groups", "features"],
     ["file", contentTypes.length.toString(), "Events", "content"],
-    ["link", linkKeys.length.toString(), "External links", "links"],
   ];
   return (
     <motion.div
@@ -283,7 +280,7 @@ export default function Dashboard({ onNavigate, currentUserRole }) {
       </div>
 
       <footer className="footer">
-        <span>ConnectLife App Management Portal (POC)</span>
+        <span>ConnectLife App Management Portal</span>
         <strong>Hisense</strong>
       </footer>
     </>
