@@ -102,7 +102,12 @@ function buildConfigData(parsedConfig, configKey) {
   return { features, restrictions, modelOverrides };
 }
 
-function ToggleButton({ enabled, onClick, label }) {
+function ToggleButton({
+  enabled,
+  onClick,
+  label,
+  disabled = false,
+}) {
   return (
     <button
       className={`switch-button${enabled ? " on" : ""}`}
@@ -110,6 +115,7 @@ function ToggleButton({ enabled, onClick, label }) {
       aria-pressed={enabled}
       aria-label={label ?? (enabled ? "Disable feature" : "Enable feature")}
       onClick={onClick}
+      disabled={disabled}
     >
       <span />
       <em>{enabled ? "ON" : "OFF"}</em>
@@ -126,7 +132,15 @@ function isConfigEnabled(config) {
   );
 }
 
-function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, onModelToggle }) {
+function FeatureRow({
+  feature,
+  overrides,
+  expanded,
+  onExpand,
+  onFeatureToggle,
+  onModelToggle,
+  isViewer,
+}) {
   const hasOverrides = overrides.length > 0;
 
   return (
@@ -145,7 +159,8 @@ function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, o
           <ToggleButton
             enabled={feature.enabled}
             label={`${feature.enabled ? "Disable" : "Enable"} ${feature.name}`}
-            onClick={() => onFeatureToggle(feature)}
+            onClick={isViewer ? undefined : () => onFeatureToggle(feature)}
+            disabled={isViewer}
           />
         </div>
 
@@ -169,7 +184,15 @@ function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, o
             {overrides.map((item) => (
               <div className="model-override" key={`${item.model}-${feature.key}`}>
                 <span className="model-name">{item.model}</span>
-                <ToggleButton enabled={item.enabled} onClick={() => onModelToggle(item, feature)} />
+                <ToggleButton
+                  enabled={item.enabled}
+                  onClick={
+                    isViewer
+                      ? undefined
+                      : () => onModelToggle(item, feature)
+                  }
+                  disabled={isViewer}
+                />
               </div>
             ))}
           </div>
@@ -179,13 +202,14 @@ function FeatureRow({ feature, overrides, expanded, onExpand, onFeatureToggle, o
   );
 }
 
-function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
+function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewer }) {
   const showFeatureList = !(
     !primary &&
     config.features.length === 1 &&
     config.features[0].key === config.key &&
     (config.modelOverrides ?? []).length === 0
   );
+  const headingToggleFeature = config.features[0];
 
   const featureOverrideMap = config.features.reduce((map, feature) => {
     map[feature.key] = config.modelOverrides
@@ -235,7 +259,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
   }
 
   const [expandedFeature, setExpandedFeature] = useState("");
-  const configEnabled = isConfigEnabled(config);
 
   return (
     <div className={`config-block${primary ? " is-primary" : ""}`}>
@@ -245,9 +268,16 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
         </div>
 
         <ToggleButton
-          enabled={configEnabled}
-          label={`${configEnabled ? "Disable" : "Enable"} ${config.label}`}
-          onClick={() => handleToggleFeature(config.features[0])}
+          enabled={headingToggleFeature?.enabled ?? false}
+          label={`${
+            headingToggleFeature?.enabled ? "Disable" : "Enable"
+          } ${headingToggleFeature?.name ?? config.label}`}
+          onClick={
+            isViewer || !headingToggleFeature
+              ? undefined
+              : () => handleToggleFeature(headingToggleFeature)
+          }
+          disabled={isViewer || !headingToggleFeature}
         />
       </div>
 
@@ -270,6 +300,7 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket }) {
                 }
                 onFeatureToggle={handleToggleFeature}
                 onModelToggle={handleToggleModelOverride}
+                isViewer={isViewer}
               />
             );
           })}
@@ -523,6 +554,7 @@ function ApplianceSection({
   cachedConfigs = [],
   onConfigsChange,
   onLoadingChange,
+  isViewer,
 }) {
   const [open, setOpen] = useState(false);
   const [configs, setConfigs] = useState(cachedConfigs);
@@ -711,6 +743,7 @@ function ApplianceSection({
                 primary={index === 0 && config.key === primaryKey}
                 onUpdateFeature={updateFeatureState}
                 selectedMarket={selectedMarket}
+                isViewer={isViewer}
               />
             ))}
         </div>
@@ -718,7 +751,11 @@ function ApplianceSection({
     </section>
   );
 }
-export default function Features({ initialMarket = "Default value" }) {
+  export default function Features({
+    initialMarket = "Default value",
+    currentUserRole,
+  }) {
+  const isViewer = currentUserRole === "viewer";
   const [filters, setFilters] = useState({
     selectedDeviceId: "all",
     selectedMarket: initialMarket,
@@ -832,6 +869,7 @@ export default function Features({ initialMarket = "Default value" }) {
                   cachedConfigs={configsByDevice[device.id] ?? []}
                   onConfigsChange={handleConfigsChange}
                   onLoadingChange={handleLoadingChange}
+                  isViewer={isViewer}
                 />
               ))
             : selectedDevice && (
@@ -841,6 +879,7 @@ export default function Features({ initialMarket = "Default value" }) {
                   cachedConfigs={configsByDevice[selectedDevice.id] ?? []}
                   onConfigsChange={handleConfigsChange}
                   onLoadingChange={handleLoadingChange}
+                  isViewer={isViewer}
                 />
               )}
         </div>

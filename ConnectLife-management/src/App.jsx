@@ -81,8 +81,13 @@ function Portal() {
       />
     ),
 
-    // ↓ SPREMEMBA: Features dobi initialMarket
-    features: <Features initialMarket={featuresMarket} />,
+   
+    features: (
+      <Features
+        initialMarket={featuresMarket}
+        currentUserRole={currentUserRole}
+      />
+    ),
 
     content: <Content />,
     links: <Links />,
