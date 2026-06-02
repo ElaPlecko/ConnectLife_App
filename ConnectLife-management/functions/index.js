@@ -85,14 +85,19 @@ exports.chatAssistant = onRequest(
     secrets: ["GEMINI_API_KEY"],
   },
   async (req, res) => {
-    try {
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
-      });
+    cors(req, res, async () => {
+      try {
+        if (req.method === "OPTIONS") {
+          return res.status(204).send("");
+        }
 
-      const { message, markets, features } = req.body;
+        const ai = new GoogleGenAI({
+          apiKey: process.env.GEMINI_API_KEY,
+        });
 
-      const prompt = `
+        const { message, markets, features } = req.body;
+
+        const prompt = `
 You are a ConnectLife dashboard assistant.
 
 Markets:
@@ -116,21 +121,23 @@ User message:
 ${message}
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
 
-      res.json({
-        success: true,
-        result: response.text,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
-        success: false,
-        error: err.message,
-      });
-    }
+        return res.json({
+          success: true,
+          result: response.text,
+        });
+      } catch (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+    });
   }
 );
