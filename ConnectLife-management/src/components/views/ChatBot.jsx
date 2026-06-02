@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../firebase";
+
 const chatAssistant = httpsCallable(functions, "chatAssistant");
 
 export default function ChatBot({
@@ -39,7 +40,19 @@ export default function ChatBot({
     const lower = message.toLowerCase();
 
     if (lower.includes("show") || lower.includes("list") || lower.includes("pokaz")) {
-      const market = findMatch(message, availableMarkets);
+      let market = findMatch(message, availableMarkets);
+
+      if (
+        lower.includes("default") ||
+        lower.includes("all markets") ||
+        lower.includes("global") ||
+        lower.includes("for all") ||
+        lower.includes("za vse") ||
+        lower.includes("privzeto") ||
+        lower.include("default market")
+      ) {
+        market = "Default value";
+      }
       return market
         ? { type: "query", market }
         : { type: "unknown" };

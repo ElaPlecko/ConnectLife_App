@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Chart, registerables } from "chart.js";
 import ChatBot from "./ChatBot.jsx";
 import { Icon } from "@iconify/react";
+import { updateRemoteFeature } from "../../services/updateRemoteConfig";
 Chart.register(...registerables);
 
 const markets = REMOTE_CONFIG_CONDITIONS.map((condition) => ({
@@ -292,7 +293,30 @@ export default function Dashboard({ onNavigate, currentUserRole, currentUserEmai
 
   // ── Firebase write + local state sync ────────────────────────────────────
   async function handleExecuteAction({ applianceId, feature, market, value }) {
-    // 1. Optimistic local update so UI reflects change immediately
+    const device = REMOTE_CONFIG_DEVICES.find((d) => d.id === applianceId);
+
+    if (!device) {
+      throw new Error(`Appliance "${applianceId}" was not found.`);
+    }
+
+    const remoteKey = device.remoteKeys.find(
+      (key) =>
+        key.label === feature ||
+        key.key === feature
+    );
+
+    if (!remoteKey) {
+      throw new Error(`Feature "${feature}" was not found in ${device.name}.`);
+    }
+
+    await updateRemoteFeature({
+      parameterKey: remoteKey.key,
+      configKey: remoteKey.configKey,
+      featureKey: remoteKey.featureKey ?? remoteKey.key,
+      value,
+      conditionKey: market !== "Default value" ? market : undefined,
+    });
+
     setFeatureData((prev) => ({
       ...prev,
       [applianceId]: {
@@ -303,41 +327,6 @@ export default function Dashboard({ onNavigate, currentUserRole, currentUserEmai
         },
       },
     }));
-
-    // 2. Persist to Firebase
-    try {
-      const { doc, setDoc, serverTimestamp, collection, addDoc } =
-        await import("firebase/firestore");
-      const { db } = await import("../../firebase");
-
-      // Update the device feature document
-      // Adjust the Firestore path to match your actual data model:
-      //   remoteConfigDevices/{applianceId}/features/{feature}
-      const featureRef = doc(
-        db,
-        "remoteConfigDevices",
-        applianceId,
-        "features",
-        feature
-      );
-      await setDoc(
-        featureRef,
-        { markets: { [market]: value } },
-        { merge: true }
-      );
-
-      // Write audit log entry
-      await addDoc(collection(db, "auditLogs"), {
-        action: `Feature ${value ? "enabled" : "disabled"}`,
-        details: `${feature} → ${market}: ${value}`,
-        userEmail: currentUserEmail || "unknown",
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      // Roll back optimistic update on failure
-      setFeatureData(buildFeatureData());
-      throw err; // re-throw so ChatBot can show the error message
-    }
   }
 
   return (

@@ -1,5 +1,4 @@
 const admin = require("firebase-admin");
-const { GoogleGenAI } = require("@google/genai");
 const { onRequest, onCall } = require("firebase-functions/v2/https");
 const cors = require("cors")({
   origin: true,
@@ -83,36 +82,128 @@ exports.updateRemoteFeatureHttp = onRequest(async (req, res) => {
 exports.chatAssistant = onCall(
   {
     secrets: ["GEMINI_API_KEY"],
+    cors: true,
   },
   async (request) => {
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
+    try {
+      console.log("CHATBOT CALLED");
+      console.log("DATA:", request.data);
 
-    const { message, markets, features } = request.data;
+      const { GoogleGenAI } = require("@google/genai");
 
-    const prompt = `
-    You are a ConnectLife dashboard assistant.
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+      });
 
-    Markets:
-    ${markets.join(", ")}
+      const { message, markets = [], features = [] } = request.data;
 
-    Features:
-    ${features.join(", ")}
+      const prompt = `
+You are the ConnectLife Management Assistant.
 
-    Return ONLY JSON.
+Your job is to help product managers manage feature flags and market-specific functionality in the ConnectLife platform.
 
-    User message:
-    ${message}
-    `;
+AVAILABLE MARKETS:
+${markets.join(", ")}
 
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: prompt,
-        });
+AVAILABLE FEATURES:
+${features.join(", ")}
 
-        return {
-          result: response.text,
-        };
+You understand:
+- feature flags
+- market rollouts
+- remote configuration
+- product management
+- usage based recommendations
+
+You may:
+- explain features
+- suggest enabling features
+- suggest disabling features
+- suggest gradual rollouts
+- identify unused functionality
+- help manage market-specific configurations
+
+IMPORTANT RULES:
+
+When the user is only asking a question, return:
+
+{
+  "action": "none",
+  "message": "your answer"
+}
+
+When the user wants to change a feature, return:
+
+{
+  "action": "toggle_feature",
+  "feature": "<feature_name>",
+  "market": "<market_name>",
+  "enabled": true,
+  "reason": "<reason>"
+}
+
+Examples:
+
+User:
+"No one in Slovenia has used AI Recipes for 7 days."
+
+Response:
+{
+  "action": "toggle_feature",
+  "feature": "AI Recipes",
+  "market": "Slovenia",
+  "enabled": false,
+  "reason": "Feature has not been used recently."
+}
+
+User:
+"Enable chatbot for Croatia."
+
+Response:
+{
+  "action": "toggle_feature",
+  "feature": "chatbot",
+  "market": "Croatia",
+  "enabled": true,
+  "reason": "Requested by user."
+}
+
+User:
+"What does the recipe assistant do?"
+
+Response:
+{
+  "action": "none",
+  "message": "The recipe assistant helps users generate meal ideas based on available ingredients."
+}
+
+Return ONLY valid JSON.
+
+Do not return markdown.
+Do not return explanations outside JSON.
+Do not use code blocks.
+
+USER MESSAGE:
+${message}
+`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      return {
+        result: response.text,
+      };
+    } catch (error) {
+      console.error("CHATBOT ERROR:", error);
+
+      return {
+        result: JSON.stringify({
+          action: "error",
+          message: error.message,
+        }),
+      };
+    }
   }
 );
