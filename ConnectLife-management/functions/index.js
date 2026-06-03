@@ -39,39 +39,76 @@ exports.updateRemoteFeatureHttp = onRequest(async (req, res) => {
         });
         }
 
-        if (conditionKey) {
-            if (!parameter.conditionalValues) {
-                parameter.conditionalValues = {};
+        if (conditionKey && conditionKey !== "Default value") {
+          if (!parameter.conditionalValues) {
+            parameter.conditionalValues = {};
+          }
+
+          if (configKey && featureKey) {
+            const baseJson = parameter.conditionalValues[conditionKey]?.value
+              ? JSON.parse(parameter.conditionalValues[conditionKey].value)
+              : JSON.parse(parameter.defaultValue.value);
+
+            if (modelKey) {
+              baseJson[modelKey][featureKey] = value;
+            } else {
+              baseJson[configKey][featureKey] = value;
             }
 
             parameter.conditionalValues[conditionKey] = {
-                value: String(value),
+              value: JSON.stringify(baseJson),
             };
-
-            await remoteConfig.publishTemplate(template);
-
-            return res.json({ success: true });
-        }
-
-      if (configKey && featureKey && requestBody.modelKey) {
-        const json = JSON.parse(parameter.defaultValue.value);
-
-        json[requestBody.modelKey][featureKey] = value;
-
-        parameter.defaultValue.value = JSON.stringify(json);
+          } else {
+            parameter.conditionalValues[conditionKey] = {
+              value: String(value),
+            };
+          }
+        } else if (modelKey) {
+          const json = JSON.parse(parameter.defaultValue.value);
+          json[modelKey][featureKey] = value;
+          parameter.defaultValue.value = JSON.stringify(json);
         } else if (configKey && featureKey) {
-        const json = JSON.parse(parameter.defaultValue.value);
-
-        json[configKey][featureKey] = value;
-
-        parameter.defaultValue.value = JSON.stringify(json);
+          const json = JSON.parse(parameter.defaultValue.value);
+          json[configKey][featureKey] = value;
+          parameter.defaultValue.value = JSON.stringify(json);
         } else {
-        parameter.defaultValue.value = String(value);
+          parameter.defaultValue.value = String(value);
         }
 
       await remoteConfig.publishTemplate(template);
 
       return res.json({ success: true });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+exports.getRemoteConfigTemplateHttp = onRequest(async (req, res) => {
+  cors(req, res, async () => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).send("");
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+
+      const remoteConfig = admin.remoteConfig();
+      const template = await remoteConfig.getTemplate();
+
+      const parameters = {};
+
+      Object.entries(template.parameters ?? {}).forEach(([key, value]) => {
+        parameters[key] = value;
+      });
+
+      Object.values(template.parameterGroups ?? {}).forEach((group) => {
+        Object.entries(group.parameters ?? {}).forEach(([key, value]) => {
+          parameters[key] = value;
+        });
+      });
+
+      return res.json({ parameters });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: error.message });

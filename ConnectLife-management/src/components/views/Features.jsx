@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchAndActivate, getValue } from "firebase/remote-config";
+import { fetchAndActivate } from "firebase/remote-config";
 import { exportFeaturesToExcel } from "../../utils/exportFeaturesToExcel";
 import { remoteConfig } from "../../firebase";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
@@ -7,7 +7,7 @@ import { duplicatedBooleanFeatures } from "../../config/washerDryerParser";
 import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateRemoteFeature } from "../../services/updateRemoteConfig";
+import { updateRemoteFeature, getRemoteConfigTemplate, clearRemoteConfigTemplateCache } from "../../services/updateRemoteConfig";
 
 function formatFeatureName(key) {
   return key
@@ -224,10 +224,12 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
       featureKey: feature.key,
       value: newValue,
       conditionKey:
-        config.configKey === null && selectedMarket !== "Default value"
-          ? selectedMarket
-          : undefined,
+      selectedMarket !== "Default value"
+        ? selectedMarket
+        : undefined,
     });
+
+    clearRemoteConfigTemplateCache();
   } catch (error) {
     // rollback če API faila
     onUpdateFeature(config.key, feature.key, oldValue);
@@ -254,7 +256,13 @@ async function handleToggleModelOverride(item, override) {
       featureKey: override.key,
       modelKey: item.model,
       value: newValue,
+      conditionKey:
+      selectedMarket !== "Default value"
+        ? selectedMarket
+        : undefined,
     });
+
+    clearRemoteConfigTemplateCache();
   } catch (error) {
     // rollback če API faila
     onUpdateFeature(
@@ -574,6 +582,23 @@ function ApplianceSection({
         setError("");
         onLoadingChangeRef.current?.(appliance.id, true);
 
+        const template = await getRemoteConfigTemplate();
+
+        function getTemplateValue(parameterKey) {
+          const parameter = template.parameters?.[parameterKey];
+
+          if (!parameter) return "";
+
+          if (
+            selectedMarket !== "Default value" &&
+            parameter.conditionalValues?.[selectedMarket]?.value
+          ) {
+            return parameter.conditionalValues[selectedMarket].value;
+          }
+
+          return parameter.defaultValue?.value ?? "";
+        }
+
         const loadedConfigs = [];
 
         const filteredRemoteKeys =
@@ -586,8 +611,8 @@ function ApplianceSection({
 
         for (const remoteConfigItem of filteredRemoteKeys) {
           if (remoteConfigItem.type === "boolean") {
-            const defaultValue = getValue(remoteConfig, remoteConfigItem.key).asBoolean();
-            const enabled = getConditionValue(remoteConfigItem, selectedMarket, defaultValue);
+            const rawValue = getTemplateValue(remoteConfigItem.key);
+            const enabled = rawValue === "true";
 
             loadedConfigs.push({
               key: remoteConfigItem.key,
@@ -607,7 +632,7 @@ function ApplianceSection({
           }
 
           if (remoteConfigItem.type === "json") {
-            const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
+            const rawValue = getTemplateValue(remoteConfigItem.key);
             if (!rawValue) continue;
 
             const parsedConfig = JSON.parse(rawValue);
@@ -807,6 +832,9 @@ export default function Features({
   }, []);
 
   const handleMarketChange = useCallback((market) => {
+    setConfigsByDevice({});
+    setLoadingDeviceIds([]);
+
     setFilters((current) => ({
       ...current,
       selectedMarket: market,
