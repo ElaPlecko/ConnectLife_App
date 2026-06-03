@@ -46,7 +46,7 @@ function buildReportHTML(date) {
   return `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111;">
     <div style="background:#185FA5;padding:28px 32px;border-radius:12px 12px 0 0;">
       <div style="font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">ConnectLife Analytics</div>
-      <div style="font-size:22px;font-weight:500;color:#fff;">Dnevno poročilo</div>
+      <div style="font-size:22px;font-weight:500;color:#fff;">Mesečno poročilo</div>
       <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">${date}</div>
     </div>
     <div style="background:#f5f5f3;padding:20px 32px;">
