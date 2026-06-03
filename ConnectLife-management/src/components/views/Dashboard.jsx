@@ -385,7 +385,24 @@ function RecentAuditLog() {
         const { db } = await import("../../firebase");
         const q = query(collection(db, "auditLogs"), orderBy("timestamp", "desc"), limit(5));
         const snap = await getDocs(q);
-        setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const hiddenBefore = Number(localStorage.getItem("auditLogsHiddenBefore") || 0);
+
+        const loadedLogs = snap.docs
+          .map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+          .filter((log) => {
+            if (!hiddenBefore) return true;
+
+            const logTime = log.timestamp?.toDate
+              ? log.timestamp.toDate().getTime()
+              : 0;
+
+            return logTime > hiddenBefore;
+          });
+
+        setLogs(loadedLogs);
       } catch (err) {
         console.error(err);
       } finally {

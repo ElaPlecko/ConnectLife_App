@@ -221,3 +221,10 @@
   color: var(--hisense);
   opacity: 0.95;
 }
+
+.compare-filter-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 22px;
+}

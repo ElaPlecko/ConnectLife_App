@@ -5,29 +5,128 @@ import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { REMOTE_CONFIG_DEVICES } from "../../config/remoteConfigDevices";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
+import { getRemoteConfigTemplate } from "../../services/updateRemoteConfig";
 
-function useResolvedBooleans() {
-  const [defaults, setDefaults] = useState({});
+function formatFeatureName(key) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function getParamValue(parameter, condLabel) {
+  if (condLabel === DEFAULT_MARKET) {
+    return parameter.defaultValue?.value;
+  }
+
+  return (
+    parameter.conditionalValues?.[condLabel]?.value ??
+    parameter.defaultValue?.value
+  );
+}
+
+function extractBooleanFeaturesFromJson(rawJson, configKey, parameterKey) {
+  if (!rawJson) return [];
+
+  const parsed = JSON.parse(rawJson);
+
+  const defaultConfig = parsed.defaultConfiguration ?? {};
+  const deviceConfig = parsed[configKey] ?? {};
+
+  const merged = {
+    ...defaultConfig,
+    ...deviceConfig,
+  };
+
+  return Object.entries(merged)
+    .filter(([, value]) => typeof value === "boolean")
+    .map(([key]) => ({
+      key: `${parameterKey}.${configKey}.${key}`,
+      label: formatFeatureName(key),
+      parameterKey,
+      configKey,
+      featureKey: key,
+      type: "json",
+    }));
+}
+
+function useResolvedFeatures(condA, condB) {
+  const [featureGroups, setFeatureGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      await fetchAndActivate(remoteConfig);
-      const result = {};
-      for (const device of REMOTE_CONFIG_DEVICES) {
-        for (const remoteKey of device.remoteKeys) {
-          if (remoteKey.type === "boolean") {
-            result[remoteKey.key] = getValue(remoteConfig, remoteKey.key).asBoolean();
-          }
-        }
-      }
-      setDefaults(result);
-      setLoading(false);
-    }
-    load();
-  }, []);
+      try {
+        const template = await getRemoteConfigTemplate({ forceRefresh: true });
+        const parameters = template.parameters ?? [];
 
-  return { defaults, loading };
+        const groups = REMOTE_CONFIG_DEVICES.map((device) => {
+          const features = [];
+
+          for (const remoteKey of device.remoteKeys) {
+            const parameter = parameters[remoteKey.key];
+            if (!parameter) continue;
+
+            if (remoteKey.type === "boolean") {
+              features.push({
+                key: remoteKey.key,
+                label: remoteKey.label,
+                type: "boolean",
+                aValue: getParamValue(parameter, condA) === "true",
+                bValue: getParamValue(parameter, condB) === "true",
+              });
+            }
+
+            if (remoteKey.type === "json") {
+              const rawA = getParamValue(parameter, condA);
+              const rawB = getParamValue(parameter, condB);
+
+              const jsonFeatures = extractBooleanFeaturesFromJson(
+                rawA ?? rawB,
+                remoteKey.configKey,
+                remoteKey.key
+              );
+
+              for (const feature of jsonFeatures) {
+                const parsedA = rawA ? JSON.parse(rawA) : {};
+                const parsedB = rawB ? JSON.parse(rawB) : {};
+
+                const aValue =
+                  parsedA?.[remoteKey.configKey]?.[feature.featureKey] ??
+                  parsedA?.defaultConfiguration?.[feature.featureKey] ??
+                  false;
+
+                const bValue =
+                  parsedB?.[remoteKey.configKey]?.[feature.featureKey] ??
+                  parsedB?.defaultConfiguration?.[feature.featureKey] ??
+                  false;
+
+                features.push({
+                  ...feature,
+                  aValue: Boolean(aValue),
+                  bValue: Boolean(bValue),
+                });
+              }
+            }
+          }
+
+          return {
+            ...device,
+            features,
+          };
+        });
+
+        setFeatureGroups(groups);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [condA, condB]);
+
+  return { featureGroups, loading };
 }
 
 const DEFAULT_MARKET = "Default";
@@ -61,14 +160,8 @@ export default function Comparison() {
   // ↓ SPREMEMBA: privzeto "Default value" za oba dropdowna
   const [condA, setCondA] = useState(DEFAULT_MARKET);
   const [condB, setCondB] = useState(REMOTE_CONFIG_CONDITIONS[0]?.label ?? "");
-  const { defaults, loading } = useResolvedBooleans();
-
-  // ↓ SPREMEMBA: ko je condLabel "Default value", vrni kar Firebase default
-  const resolve = (remoteKey, condLabel) => {
-    if (condLabel === DEFAULT_MARKET) return defaults[remoteKey.key] ?? false;
-    const match = (remoteKey.conditions ?? []).find((c) => c.label === condLabel);
-    return match !== undefined ? match.value : (defaults[remoteKey.key] ?? false);
-  };
+  const [compareFilter, setCompareFilter] = useState("all");
+  const { featureGroups, loading } = useResolvedFeatures(condA, condB);
 
   const allOptions = [DEFAULT_MARKET, ...REMOTE_CONFIG_CONDITIONS.map((c) => c.label)];
 
@@ -107,6 +200,29 @@ export default function Comparison() {
         </label>
       </div>
 
+      <div className="compare-filter-buttons">
+        <button
+          className={compareFilter === "all" ? "primary-button" : "outline-button"}
+          onClick={() => setCompareFilter("all")}
+        >
+          All
+        </button>
+
+        <button
+          className={compareFilter === "different" ? "primary-button" : "outline-button"}
+          onClick={() => setCompareFilter("different")}
+        >
+          Different
+        </button>
+
+        <button
+          className={compareFilter === "same" ? "primary-button" : "outline-button"}
+          onClick={() => setCompareFilter("same")}
+        >
+          Same
+        </button>
+      </div>
+
       {loading ? (
         <ComparisonSkeleton />
       ) : (
@@ -119,9 +235,16 @@ export default function Comparison() {
             exit={{ opacity: 0, y: -12, scale: 0.985 }}
             transition={{ duration: 0.32, ease: "easeOut" }}
           >
-            {REMOTE_CONFIG_DEVICES.map((device) => {
-              const booleanKeys = device.remoteKeys.filter((k) => k.type === "boolean");
-              if (booleanKeys.length === 0) return null;
+            {featureGroups.map((device) => {
+              const visibleKeys = device.features.filter((feature) => {
+                const differs = feature.aValue !== feature.bValue;
+
+                if (compareFilter === "different") return differs;
+                if (compareFilter === "same") return !differs;
+                return true;
+              });
+
+              if (visibleKeys.length === 0) return null;
 
               return (
                 <section key={device.id} className="comparison-appliance">
@@ -143,9 +266,9 @@ export default function Comparison() {
                       <span>{condB}</span>
                     </div>
 
-                    {booleanKeys.map((remoteKey) => {
-                      const aOn = resolve(remoteKey, condA);
-                      const bOn = resolve(remoteKey, condB);
+                    {visibleKeys.map((remoteKey) => {
+                      const aOn = remoteKey.aValue;
+                      const bOn = remoteKey.bValue;
                       const differs = aOn !== bOn;
 
                       return (
