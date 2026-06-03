@@ -354,7 +354,7 @@
   border: 1px solid var(--border, #d1d5db);
   font-size: 13px;
   background: var(--surface, #fff);
-  color: var(--text, #111827);
+  color: var(--ink, #111827);
   outline: none;
   transition: border-color 0.15s;
 }
