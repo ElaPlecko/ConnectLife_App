@@ -5,6 +5,15 @@ import { clearRemoteConfigTemplateCache } from "../../services/updateRemoteConfi
 
 const chatAssistant = httpsCallable(functions, "chatAssistant");
 
+const CHATBOT_MESSAGES_KEY = "connectlifeChatbotMessages";
+
+  const defaultMessages = [
+    {
+      role: "bot",
+      text: `Hello! 👋 I help you manage features by markets.`,
+    },
+  ];
+
 export default function ChatBot({
   availableMarkets = [],
   availableFeatures = [],
@@ -13,18 +22,27 @@ export default function ChatBot({
   onClose,
   userEmail,
 }) {
-  const [messages, setMessages] = useState([
-    {
-      role: "bot",
-      text: `Hello! 👋 I help you manage features by markets.`,
-    },
-  ]);
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = sessionStorage.getItem(CHATBOT_MESSAGES_KEY);
+
+    if (!savedMessages) return defaultMessages;
+
+    try {
+      return JSON.parse(savedMessages);
+    } catch {
+      return defaultMessages;
+    }
+  });
   const [input, setInput] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
   // Auto-scroll to bottom
+  useEffect(() => {
+    sessionStorage.setItem(CHATBOT_MESSAGES_KEY, JSON.stringify(messages));
+  }, [messages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
