@@ -39,10 +39,8 @@ function Portal() {
   }, [theme]);
 
   const [brandColor, setBrandColor] = useState("#009A9D");
-  const [currentView, setCurrentView] = useState("dashboard");
 
-  // ↓ SPREMEMBA: shrani izbrani market za Features page
-  const [featuresMarket, setFeaturesMarket] = useState("Default value");
+  const [nav, setNav] = useState({ view: "dashboard", market: "Default value" });
 
   const navigate = useNavigate();
 
@@ -53,20 +51,16 @@ function Portal() {
       ? "admin"
       : "viewer";
 
-  // ↓ SPREMEMBA: handleNavigate sprejme opcijski market parameter
   const handleNavigate = (view, market) => {
     if (view === "login") {
       navigate("/");
       return;
     }
 
-    if (view === "features" && market) {
-      setFeaturesMarket(market);
-    } else {
-      setFeaturesMarket("Default value");
-    }
-
-    setCurrentView(view);
+    setNav({
+      view,
+      market: view === "features" && market ? market : "Default value",
+    });
   };
 
   const views = {
@@ -78,7 +72,6 @@ function Portal() {
       />
     ),
 
-    // ↓ SPREMEMBA: Markets dobi onNavigate
     markets: (
       <Markets
         currentUserRole={currentUserRole}
@@ -87,10 +80,9 @@ function Portal() {
       />
     ),
 
-   
     features: (
       <Features
-        initialMarket={featuresMarket}
+        initialMarket={nav.market}
         currentUserRole={currentUserRole}
       />
     ),
@@ -98,16 +90,14 @@ function Portal() {
     content: <Content />,
     links: <Links />,
     comparison: <Comparison />,
-
     users: <Users currentUserRole={currentUserRole} />,
-
     audit: <AuditLog />,
   };
 
   return (
     <div>
       <Sidebar
-        currentView={currentView}
+        currentView={nav.view}
         onNavigate={handleNavigate}
         theme={theme}
         setTheme={setTheme}
@@ -124,13 +114,13 @@ function Portal() {
         >
           <AnimatePresence mode="wait">
             <motion.div
-              key={currentView}
+              key={nav.view}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
-              {views[currentView]}
+              {views[nav.view]}
             </motion.div>
           </AnimatePresence>
         </section>

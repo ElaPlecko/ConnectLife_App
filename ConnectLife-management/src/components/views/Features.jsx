@@ -23,7 +23,6 @@ function buildConfigData(parsedConfig, configKey) {
 
   if (energyKeys.includes(configKey)) {
     const models = parsedConfig[configKey] ?? {};
-
     return {
       features: [],
       restrictions: [],
@@ -52,7 +51,6 @@ function buildConfigData(parsedConfig, configKey) {
     const firstModel = Object.values(parsedConfig).find(
       (v) => v && typeof v === "object" && !Array.isArray(v)
     );
-
     mergedConfig = { ...(firstModel ?? {}) };
   }
 
@@ -73,7 +71,6 @@ function buildConfigData(parsedConfig, configKey) {
     }));
 
   const reservedKeys = new Set(["defaultConfiguration", configKey]);
-
   const conditionLabels = new Set(
     REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label)
   );
@@ -102,12 +99,7 @@ function buildConfigData(parsedConfig, configKey) {
   return { features, restrictions, modelOverrides };
 }
 
-function ToggleButton({
-  enabled,
-  onClick,
-  label,
-  disabled = false,
-}) {
+function ToggleButton({ enabled, onClick, label, disabled = false }) {
   return (
     <button
       className={`switch-button${enabled ? " on" : ""}`}
@@ -179,18 +171,13 @@ function FeatureRow({
       {hasOverrides && expanded && (
         <div className="model-panel">
           <strong className="model-panel-title">Model overrides</strong>
-
           <div className="model-list">
             {overrides.map((item) => (
               <div className="model-override" key={`${item.model}-${feature.key}`}>
                 <span className="model-name">{item.model}</span>
                 <ToggleButton
                   enabled={item.enabled}
-                  onClick={
-                    isViewer
-                      ? undefined
-                      : () => onModelToggle(item, feature)
-                  }
+                  onClick={isViewer ? undefined : () => onModelToggle(item, feature)}
                   disabled={isViewer}
                 />
               </div>
@@ -225,7 +212,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
 
   async function handleToggleFeature(feature) {
     const newValue = !feature.enabled;
-
     try {
       await updateRemoteFeature({
         parameterKey: config.key,
@@ -237,7 +223,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
             ? selectedMarket
             : undefined,
       });
-
       onUpdateFeature(config.key, feature.key, newValue);
     } catch (error) {
       console.error(error);
@@ -246,7 +231,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
 
   async function handleToggleModelOverride(item, override) {
     const newValue = !override.enabled;
-
     await updateRemoteFeature({
       parameterKey: config.key,
       configKey: config.configKey,
@@ -254,7 +238,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
       modelKey: item.model,
       value: newValue,
     });
-
     onUpdateFeature(config.key, override.key, newValue, item.model);
   }
 
@@ -266,12 +249,11 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
         <div>
           <h4>{config.label}</h4>
         </div>
-
         <ToggleButton
           enabled={headingToggleFeature?.enabled ?? false}
-          label={`${
-            headingToggleFeature?.enabled ? "Disable" : "Enable"
-          } ${headingToggleFeature?.name ?? config.label}`}
+          label={`${headingToggleFeature?.enabled ? "Disable" : "Enable"} ${
+            headingToggleFeature?.name ?? config.label
+          }`}
           onClick={
             isViewer || !headingToggleFeature
               ? undefined
@@ -286,7 +268,6 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
           {config.features.map((feature) => {
             const overrides = featureOverrideMap[feature.key] ?? [];
             const expanded = expandedFeature === feature.key;
-
             return (
               <FeatureRow
                 key={feature.key}
@@ -335,7 +316,6 @@ function getConfigPreviewFeatures(configs) {
         enabled: feature.enabled,
       }));
     }
-
     return (config.modelOverrides ?? []).flatMap((model) =>
       model.overrides.map((override) => ({
         key: `${config.key}-${model.model}-${override.key}`,
@@ -349,6 +329,7 @@ function getConfigPreviewFeatures(configs) {
 function getAvailableMarkets() {
   return REMOTE_CONFIG_CONDITIONS.map((condition) => condition.label).sort();
 }
+
 function PhonePreview({
   selectedDeviceId,
   selectedDevice,
@@ -370,12 +351,7 @@ function PhonePreview({
     const configs = configsByDevice[device.id] ?? [];
     const isLoading = loadingDeviceIds.includes(device.id);
     const enabled = configs.some(isConfigEnabled);
-
-    return {
-      ...device,
-      enabled,
-      isLoading,
-    };
+    return { ...device, enabled, isLoading };
   }).filter((device) => device.enabled || device.isLoading);
 
   const markets = getAvailableMarkets();
@@ -384,13 +360,11 @@ function PhonePreview({
     <aside className="phone-preview-wrap" aria-label="ConnectLife app preview">
       <div className="phone-frame">
         <div className="phone-speaker" aria-hidden="true" />
-
         <div className="phone-screen">
           <div className="phone-statusbar">
             <span>9:41</span>
             <span className="phone-signal">100%</span>
           </div>
-
           <div className="phone-home-header">
             <strong>
               <span className="phone-brand-mark">C</span>
@@ -398,10 +372,8 @@ function PhonePreview({
             </strong>
             <Icon icon="lucide:bell" />
           </div>
-
           <div className="phone-filter-row">
             <button type="button">All Floors</button>
-
             <select
               className="phone-market"
               style={{ appearance: "none", WebkitAppearance: "none" }}
@@ -416,7 +388,6 @@ function PhonePreview({
                 </option>
               ))}
             </select>
-
             <select
               className="phone-market"
               style={{ appearance: "none", WebkitAppearance: "none" }}
@@ -432,13 +403,11 @@ function PhonePreview({
               ))}
             </select>
           </div>
-
           <div className="phone-tabs">
             <span className="is-active">All</span>
             <span>Living room</span>
             <span>Bedroom</span>
           </div>
-
           {!isAllDevices && (
             <div className="phone-selected-summary">
               {selectedDevice && <Icon icon={selectedDevice.icon} />}
@@ -448,7 +417,6 @@ function PhonePreview({
               </div>
             </div>
           )}
-
           <div className="phone-card-scroll">
             {isAllDevices ? (
               <div className="phone-card-grid">
@@ -467,7 +435,6 @@ function PhonePreview({
                     <span>{device.isLoading ? "Syncing" : "On"}</span>
                   </div>
                 ))}
-
                 {visibleDevices.length === 0 && (
                   <div className="phone-empty-state">
                     No active devices for this market.
@@ -493,7 +460,6 @@ function PhonePreview({
                     <span>{feature.enabled ? "On" : "Off"}</span>
                   </div>
                 ))}
-
                 {visibleFeatures.length === 0 && (
                   <div className="phone-empty-state">
                     No active features for this appliance.
@@ -502,7 +468,6 @@ function PhonePreview({
               </div>
             )}
           </div>
-
           <div className="phone-bottom-nav">
             <span>
               <Icon icon="lucide:layout-dashboard" />
@@ -533,18 +498,15 @@ function PhonePreview({
 function getConditionValue(remoteConfigItem, selectedMarket, defaultValue) {
   if (selectedMarket === "Default value") return defaultValue;
 
-  const itemConditions = remoteConfigItem.conditions ?? [];
-
   const matchedCondition = REMOTE_CONFIG_CONDITIONS.find(
     (condition) => condition.label === selectedMarket
   );
-
   if (!matchedCondition) return defaultValue;
 
+  const itemConditions = remoteConfigItem.conditions ?? [];
   const override = itemConditions.find(
     (itemCondition) => itemCondition.label === matchedCondition.label
   );
-
   return override ? override.value : defaultValue;
 }
 
@@ -559,22 +521,32 @@ function ApplianceSection({
   const [open, setOpen] = useState(false);
   const [configs, setConfigs] = useState(cachedConfigs);
   const cachedConfigsRef = useRef(cachedConfigs);
+  const onConfigsChangeRef = useRef(onConfigsChange);
+  const onLoadingChangeRef = useRef(onLoadingChange);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ── Refs se posodabljajo brez da bi sprožili useEffect ────────────────────
   useEffect(() => {
     cachedConfigsRef.current = cachedConfigs;
   }, [cachedConfigs]);
 
   useEffect(() => {
+    onConfigsChangeRef.current = onConfigsChange;
+  }, [onConfigsChange]);
+
+  useEffect(() => {
+    onLoadingChangeRef.current = onLoadingChange;
+  }, [onLoadingChange]);
+
+  // ── Samo appliance.id in selectedMarket v dependency arrayu ───────────────
+  // fetchAndActivate se NE kliče tukaj — enkrat ga pokliče Features starš
+  useEffect(() => {
     async function loadRemoteConfig() {
       try {
         setLoading(true);
         setError("");
-        onLoadingChange?.(appliance.id, true);
-
-        // ✅ OSVEŽAVANJE: Uvek osvežavamo Firebase podatke pre nego što učitamo
-        await fetchAndActivate(remoteConfig);
+        onLoadingChangeRef.current?.(appliance.id, true);
 
         const loadedConfigs = [];
 
@@ -588,16 +560,8 @@ function ApplianceSection({
 
         for (const remoteConfigItem of filteredRemoteKeys) {
           if (remoteConfigItem.type === "boolean") {
-            const defaultValue = getValue(
-              remoteConfig,
-              remoteConfigItem.key
-            ).asBoolean();
-
-            const enabled = getConditionValue(
-              remoteConfigItem,
-              selectedMarket,
-              defaultValue
-            );
+            const defaultValue = getValue(remoteConfig, remoteConfigItem.key).asBoolean();
+            const enabled = getConditionValue(remoteConfigItem, selectedMarket, defaultValue);
 
             loadedConfigs.push({
               key: remoteConfigItem.key,
@@ -613,16 +577,11 @@ function ApplianceSection({
               restrictions: [],
               modelOverrides: [],
             });
-
             continue;
           }
 
           if (remoteConfigItem.type === "json") {
-            const rawValue = getValue(
-              remoteConfig,
-              remoteConfigItem.key
-            ).asString();
-
+            const rawValue = getValue(remoteConfig, remoteConfigItem.key).asString();
             if (!rawValue) continue;
 
             const parsedConfig = JSON.parse(rawValue);
@@ -638,34 +597,31 @@ function ApplianceSection({
         }
 
         setConfigs(loadedConfigs);
-        onConfigsChange?.(appliance.id, loadedConfigs);
+        onConfigsChangeRef.current?.(appliance.id, loadedConfigs);
       } catch (err) {
         console.error(err);
-
         const cachedFallback = cachedConfigsRef.current;
-
         if (cachedFallback.length === 0) {
           setError("Could not load Remote Config.");
-          onConfigsChange?.(appliance.id, []);
+          onConfigsChangeRef.current?.(appliance.id, []);
         } else {
           setError("");
           setConfigs(cachedFallback);
-          onConfigsChange?.(appliance.id, cachedFallback);
+          onConfigsChangeRef.current?.(appliance.id, cachedFallback);
         }
       } finally {
         setLoading(false);
-        onLoadingChange?.(appliance.id, false);
+        onLoadingChangeRef.current?.(appliance.id, false);
       }
     }
 
     loadRemoteConfig();
-  }, [appliance, selectedMarket, onConfigsChange, onLoadingChange]);
+  }, [appliance.id, selectedMarket]); // ← samo primitivne vrednosti, brez callbackov
 
   function updateFeatureState(configKey, featureKey, value, modelKey = null) {
     setConfigs((previous) => {
       const nextConfigs = previous.map((config) => {
         if (config.key !== configKey) return config;
-
         if (modelKey) {
           return {
             ...config,
@@ -683,18 +639,14 @@ function ApplianceSection({
             ),
           };
         }
-
         return {
           ...config,
           features: config.features.map((feature) =>
-            feature.key === featureKey
-              ? { ...feature, enabled: value }
-              : feature
+            feature.key === featureKey ? { ...feature, enabled: value } : feature
           ),
         };
       });
-
-      onConfigsChange?.(appliance.id, nextConfigs);
+      onConfigsChangeRef.current?.(appliance.id, nextConfigs);
       return nextConfigs;
     });
   }
@@ -715,17 +667,14 @@ function ApplianceSection({
       >
         <div className="appliance-title">
           <Icon className="appliance-inline-icon" icon={appliance.icon} />
-
           <div>
             <h3>{appliance.name}</h3>
             <p>{appliance.category}</p>
           </div>
         </div>
-
         <span className="market-chip appliance-status">
           {loading ? "Loading..." : `${totalFeatures} features`}
         </span>
-
         <span
           className={`chevron-button${open ? " is-open" : ""}`}
           aria-hidden="true"
@@ -735,7 +684,6 @@ function ApplianceSection({
       {open && (
         <div className="appliance-body">
           {error && <div className="feature-error">{error}</div>}
-
           {!error &&
             configs.map((config, index) => (
               <ConfigBlock
@@ -752,10 +700,11 @@ function ApplianceSection({
     </section>
   );
 }
-  export default function Features({
-    initialMarket = "Default value",
-    currentUserRole,
-  }) {
+
+export default function Features({
+  initialMarket = "Default value",
+  currentUserRole,
+}) {
   const isViewer = currentUserRole === "viewer";
   const [filters, setFilters] = useState({
     selectedDeviceId: "all",
@@ -764,10 +713,10 @@ function ApplianceSection({
   });
   const [configsByDevice, setConfigsByDevice] = useState({});
   const [loadingDeviceIds, setLoadingDeviceIds] = useState([]);
-  const [refreshKey, setRefreshKey] = useState(0); // ✅ Forsira re-render
+  const [refreshKey, setRefreshKey] = useState(0);
   const markets = getAvailableMarkets();
 
-  // ✅ OSVEŽAVANJE: Na početku, osvežavamo Firebase podatke
+  // ── En sam fetchAndActivate za vse naprave skupaj ─────────────────────────
   useEffect(() => {
     async function refreshRemoteConfig() {
       try {
@@ -816,7 +765,6 @@ function ApplianceSection({
       if (isLoading) {
         return current.includes(deviceId) ? current : [...current, deviceId];
       }
-
       return current.filter((id) => id !== deviceId);
     });
   }, []);
@@ -849,7 +797,6 @@ function ApplianceSection({
             onChange={(e) => handleDeviceChange(e.target.value)}
           >
             <option value="all">All appliances</option>
-
             {REMOTE_CONFIG_DEVICES.map((device) => (
               <option key={device.id} value={device.id}>
                 {device.name}
@@ -865,7 +812,6 @@ function ApplianceSection({
             onChange={(e) => handleMarketChange(e.target.value)}
           >
             <option value="Default value">Default value</option>
-
             {markets.map((market) => (
               <option key={market} value={market}>
                 {market}
