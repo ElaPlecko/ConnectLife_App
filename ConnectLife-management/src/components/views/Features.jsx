@@ -8,6 +8,8 @@ import { REMOTE_CONFIG_CONDITIONS } from "../../config/remoteConfigConditions";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { updateRemoteFeature, getRemoteConfigTemplate, clearRemoteConfigTemplateCache } from "../../services/updateRemoteConfig";
+import { db, auth } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 function formatFeatureName(key) {
   return key
@@ -189,6 +191,15 @@ function FeatureRow({
   );
 }
 
+async function writeAuditLog({ action, details }) {
+  await addDoc(collection(db, "auditLogs"), {
+    userEmail: auth.currentUser?.email ?? "unknown",
+    action,
+    details,
+    timestamp: serverTimestamp(),
+  });
+}
+
 function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewer }) {
   const showFeatureList = !(
     !primary &&
@@ -230,6 +241,11 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
     });
 
     clearRemoteConfigTemplateCache();
+
+    await writeAuditLog({
+      action: "Feature updated",
+      details: `${selectedMarket}: ${feature.name} changed from ${oldValue} to ${newValue}`,
+    });
   } catch (error) {
     // rollback če API faila
     onUpdateFeature(config.key, feature.key, oldValue);
@@ -263,6 +279,11 @@ async function handleToggleModelOverride(item, override) {
     });
 
     clearRemoteConfigTemplateCache();
+
+    await writeAuditLog({
+      action: "Model override updated",
+      details: `${selectedMarket}: ${item.model} / ${override.name} changed from ${oldValue} to ${newValue}`,
+    });
   } catch (error) {
     // rollback če API faila
     onUpdateFeature(

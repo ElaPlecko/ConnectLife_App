@@ -139,14 +139,23 @@ export function AuditLog() {
   useEffect(() => {
     async function loadLogs() {
       try {
-        const { collection, getDocs, orderBy, query } = await import("firebase/firestore");
+        const { collection, getDocs, orderBy, query } = await import(
+          "firebase/firestore"
+        );
         const { db } = await import("../../firebase");
-        const q = query(collection(db, "auditLogs"), orderBy("timestamp", "desc"));
+
+        const q = query(
+          collection(db, "auditLogs"),
+          orderBy("timestamp", "desc")
+        );
+
         const snapshot = await getDocs(q);
+
         const loaded = snapshot.docs.map((document) => ({
           id: document.id,
           ...document.data(),
         }));
+
         setLogs(loaded);
       } catch (err) {
         console.error(err);
@@ -154,10 +163,25 @@ export function AuditLog() {
         setLoading(false);
       }
     }
+
     loadLogs();
   }, []);
 
-  const rows = logs.map((log) => (
+  const hiddenBefore = Number(
+    localStorage.getItem("auditLogsHiddenBefore") || 0
+  );
+
+  const visibleLogs = logs.filter((log) => {
+    if (!hiddenBefore) return true;
+
+    const logTime = log.timestamp?.toDate
+      ? log.timestamp.toDate().getTime()
+      : 0;
+
+    return logTime > hiddenBefore;
+  });
+
+  const rows = visibleLogs.map((log) => (
     <tr key={log.id}>
       <td>{log.userEmail}</td>
       <td>{log.action}</td>
@@ -172,6 +196,38 @@ export function AuditLog() {
 
   return (
     <SimplePanel title="Audit Log">
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "16px",
+        }}
+      >
+        <button
+          className="primary-button"
+          onClick={() => {
+            localStorage.setItem(
+              "auditLogsHiddenBefore",
+              Date.now().toString()
+            );
+            setLogs([...logs]);
+          }}
+        >
+          Clear visible logs
+        </button>
+
+        <button
+          className="outline-button"
+          onClick={() => {
+            localStorage.removeItem("auditLogsHiddenBefore");
+            setLogs([...logs]);
+          }}
+        >
+          Show all logs
+        </button>
+      </div>
+
+
       {loading ? (
         <AuditSkeleton />
       ) : (

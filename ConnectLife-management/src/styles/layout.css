@@ -419,3 +419,13 @@
     var(--surface)
   );
 }
+
+.danger-button {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--red);
+  color: white;
+  font-weight: 850;
+}
