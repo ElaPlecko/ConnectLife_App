@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../firebase";
+import { clearRemoteConfigTemplateCache } from "../../services/updateRemoteConfig";
 
 const chatAssistant = httpsCallable(functions, "chatAssistant");
 
@@ -183,6 +184,9 @@ export default function ChatBot({
             ...parsed,
             fromChatBot: true,
           });
+
+          clearRemoteConfigTemplateCache();
+          window.dispatchEvent(new Event("connectlifeRemoteConfigUpdated"));
           setMessages((prev) => [
             ...prev,
             {

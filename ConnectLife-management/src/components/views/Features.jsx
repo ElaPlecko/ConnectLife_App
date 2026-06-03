@@ -802,6 +802,9 @@ export default function Features({
     refreshRemoteConfig();
 
     const handleExternalUpdate = () => {
+      clearRemoteConfigTemplateCache();
+      setConfigsByDevice({});
+      setLoadingDeviceIds([]);
       refreshRemoteConfig();
     };
 
