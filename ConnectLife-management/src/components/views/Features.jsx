@@ -209,28 +209,45 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
       .filter(Boolean);
     return map;
   }, {});
-
+  
   async function handleToggleFeature(feature) {
-    const newValue = !feature.enabled;
-    try {
-      await updateRemoteFeature({
-        parameterKey: config.key,
-        configKey: config.configKey,
-        featureKey: feature.key,
-        value: newValue,
-        conditionKey:
-          config.configKey === null && selectedMarket !== "Default value"
-            ? selectedMarket
-            : undefined,
-      });
-      onUpdateFeature(config.key, feature.key, newValue);
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  const oldValue = feature.enabled;
+  const newValue = !oldValue;
 
-  async function handleToggleModelOverride(item, override) {
-    const newValue = !override.enabled;
+  // takoj posodobi UI
+  onUpdateFeature(config.key, feature.key, newValue);
+
+  try {
+    await updateRemoteFeature({
+      parameterKey: config.key,
+      configKey: config.configKey,
+      featureKey: feature.key,
+      value: newValue,
+      conditionKey:
+        config.configKey === null && selectedMarket !== "Default value"
+          ? selectedMarket
+          : undefined,
+    });
+  } catch (error) {
+    // rollback če API faila
+    onUpdateFeature(config.key, feature.key, oldValue);
+    console.error(error);
+  }
+}
+
+async function handleToggleModelOverride(item, override) {
+  const oldValue = override.enabled;
+  const newValue = !oldValue;
+
+  // takoj posodobi UI
+  onUpdateFeature(
+    config.key,
+    override.key,
+    newValue,
+    item.model
+  );
+
+  try {
     await updateRemoteFeature({
       parameterKey: config.key,
       configKey: config.configKey,
@@ -238,8 +255,17 @@ function ConfigBlock({ config, primary, onUpdateFeature, selectedMarket, isViewe
       modelKey: item.model,
       value: newValue,
     });
-    onUpdateFeature(config.key, override.key, newValue, item.model);
+  } catch (error) {
+    // rollback če API faila
+    onUpdateFeature(
+      config.key,
+      override.key,
+      oldValue,
+      item.model
+    );
+    console.error(error);
   }
+}
 
   const [expandedFeature, setExpandedFeature] = useState("");
 
