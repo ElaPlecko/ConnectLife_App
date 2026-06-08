@@ -14,16 +14,6 @@ Zaradi tega je bila razvita spletna aplikacija ConnectLife Management Portal, ki
 
 ---
 
-## Kazalo vsebine
- 
-- [Vizija projekta](#vizija-projekta)
-- [Struktura projekta](#struktura-projekta)
-- [Orodja, ogrodja in knjižnice](#orodja-ogrodja-in-knjižnice)
-- [Namestitev in zagon](#namestitev-in-zagon)
-- [Spremenljivke okolja](#spremenljivke-okolja)
-
----
-
 ## Vizija projekta
 
 ConnectLife Management Portal omogoča ekipi upravljanje pametnih gospodinjskih aparatov platforme ConnectLife. Prek njega je mogoče konfigurirati in pregledovati aparate z uporabo Firebase Remote Config, nastavljati dostopnost funkcionalnosti po posameznih trgih ter imeti vpogled v uporabnike platforme. Nadzorna plošča omogoča spremljanje ključnih metrik in dogodkov v realnem času, vgrajen chatbot asistent pa nudi interaktivno pomoč znotraj portala. Za analitične potrebe je na voljo primerjalni pogled, ki omogoča primerjavo konfiguracij med trgi, ter možnost izvoza podatkov v Excel format. 
