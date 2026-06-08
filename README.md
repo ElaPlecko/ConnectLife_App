@@ -123,11 +123,6 @@ docker build -t connectlife-management .
 # Zagon kontejnerja
 docker run -p 80:80 connectlife-management
 ```
- 
-### nginx konfiguracija
- 
-Datoteka `nginx.conf` je vključena v projekt in jo Docker samodejno uporabi. Konfigurirana je za SPA routing (vse zahteve preusmerja na `index.html`).
- 
 ---
  
 ## Firebase Cloud Functions
