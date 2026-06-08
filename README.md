@@ -2,15 +2,9 @@
 
 ## Uvod
 
-ConnectLife Management Portal je interno spletno orodje, namenjeno zaposlenim v podjetju Hisense Europe za upravljanje konfiguracij, funkcionalnosti in vsebin aplikacije ConnectLife na različnih trgih.
 
-Namen sistema je omogočiti upravljanje podatkov, ki vplivajo na delovanje mobilne aplikacije ConnectLife, brez potrebe po spremembah izvorne kode ali novi izdaji aplikacije.
+ConnectLife Management Portal je interno spletno orodje, razvito za podjetje Hisense Europe, ki omogoča centralizirano upravljanje konfiguracij, funkcionalnosti in vsebin aplikacije ConnectLife na različnih trgih. Ker se potrebe in podprte funkcionalnosti med trgi razlikujejo, sistem zaposlenim omogoča samostojno upravljanje nastavitev preko enotnega uporabniškega vmesnika, brez poseganja v izvorno kodo ali potrebe po novi izdaji mobilne aplikacije.
 
-## Opis problema
-
-Aplikacija ConnectLife je prisotna na različnih trgih po svetu, kjer se lahko razlikujejo podprte funkcionalnosti, vsebine in poslovna pravila.
-
-Zaradi tega je bila razvita spletna aplikacija ConnectLife Management Portal, ki zaposlenim omogoča samostojno upravljanje konfiguracij in vsebin preko centraliziranega uporabniškega vmesnika.
 
 ---
 
