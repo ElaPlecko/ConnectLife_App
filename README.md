@@ -145,3 +145,5 @@ firebase deploy
 > Za deploy je potrebna prijava: `firebase login`
  
 ---
+
+Spletna rešitev je dostopna na: https://connectlife-admin-dev.firebaseapp.com/
